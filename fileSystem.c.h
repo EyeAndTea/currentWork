@@ -2670,8 +2670,3691 @@ CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_mountInfo_copyAssignFrom(
 	}
 }
 
+
+
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_construct(Crx_C_Os_FileSystem_Io * pThis)
+{
+#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	SYSTEM_INFO vSystemInfo /*= ?*/;
+#endif
+	
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	//FORMAL VIOLATION IN ASSIGNING CONSTANT.
+	if(!crx_c_os_fileSystem_private_posix_sysconf(&(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE),
+			CRX__C__OS__FILE_SYSTEM__SC__PAGE_SIZE))
+		{pThis->gPRIVATE__REGION_ALIGNMENT_VALUE = 4096;}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	GetSystemInfo(&vSystemInfo);
+
+	pThis->gPRIVATE__REGION_ALIGNMENT_VALUE = vSystemInfo.dwAllocationGranularity;
+#endif
+	pThis->gPrivate_isMemoryMappingPrefered = false;
+	pThis->gPrivate_isRwLockInitialized = false;
+	pThis->gAccessorCount = 0;
+	pThis->gPrivate_fileAccessMode = CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NULL;
+	pThis->gPrivate_fileShareMode = CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__NULL;
+	pThis->gPrivate_osFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+	pThis->gPrivate_osFileHandle__2 = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	pThis->gPrivate_mappingHandle = NULL;
+#endif
+	crx_c_string_construct(&(pThis->gPrivate_internalFullPath));
+	pThis->gPrivate_expectedByteSize = 0;
+	pThis->gPrivate_hiddenByteSize = 0;
+	pThis->gPrivate_maximumTraversedByteSize = 0;
+	pThis->gPrivate_numberOfActiveSequentialRequests = 0;
+	crx_c_hashTable_construct(&(pThis->gPrivate_infoOfSequentials), 
+			crx_c_getTypeBluePrintForUint32(), 
+			crx_c_os_fileSystem_io_infoOfSequential_getTypeBluePrintForPointer(), 
+			&crx_c_hashTable_areUint32sEqual, &crx_c_hashTable_getHashKeyForUint32);
+	//REMEMBER, "void *", "char *" "unsigned char *", AND "signed char *" HAVE THE SAME 
+	//		REPRESENTATION AND ALIGNMENT REQUIREMENT IN C89 WHICH IS WHY WE CAN USE A VOID POINTER
+	//		TYPE BLUE PRINT WITHOUT ANY SPECIAL TREATMENT.
+	crx_c_tree_construct13(&(pThis->gPrivate_regionsByAddress), 
+			crx_c_os_fileSystem_io_region_getTypeBluePrintForPointer(),
+			crx_c_getTypeBluePrintForVoidPointer(), 
+			CRX__C__TREE__FLAG__CONSERVATIVE_IN_GROWTH, 
+			&crx_c_os_fileSystem_io_getOrderOfRegions1,
+			&crx_c_os_fileSystem_io_getOrderOfUnsignedCharPointers,
+			&crx_c_os_fileSystem_io_constructIndexFromRegion,
+			2)
+	crx_c_tree_construct13(&(pThis->gPrivate_regionsByOffset),
+			crx_c_os_fileSystem_io_region_getTypeBluePrintForPointer(),
+			crx_c_getTypeBluePrintForUint64(),
+			CRX__C__TREE__FLAG__CONSERVATIVE_IN_GROWTH,
+			&crx_c_os_fileSystem_io_getOrderOfRegions2,
+			&crx_c_os_fileSystem_io_getOrderOfUint64,
+			&crx_c_os_fileSystem_io_constructIndexFromRegion2,
+			2);
+	crx_c_tree_construct13(&(pThis->gPrivate_portions__locked),
+			crx_c_os_fileSystem_io_portion_getTypeBluePrintForPointer(),
+			crx_c_getTypeBluePrintForUint64(), 
+			CRX__C__TREE__FLAG__CONSERVATIVE_IN_GROWTH,
+			&crx_c_os_fileSystem_io_getOrderOfPortions,
+			&crx_c_os_fileSystem_io_getOrderOfUint64,
+			&crx_c_os_fileSystem_io_constructIndexFromPortion,
+			2);
+
+	if(crx_c_pthread_rwlock_crx_init(&(pThis->gPrivate_rwLock)) == 0)
+	{
+		if(crx_c_pthread_rwlock_crx_init(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+			{pThis->gPrivate_isRwLockInitialized = true;}
+		else
+			{crx_c_pthread_rwlock_destroy(&(pThis->gPrivate_rwLock));}
+	}
+
+	if(pThis->gPrivate_isRwLockInitialized)
+		{CRX__SET_TO_ZERO(Crx_C_Pthread_RawId, pThis->gPrivate_rawId);}
+	else
+		{crx_c_pthread_crx_getRawThreadId(&(pThis->gPrivate_rawId));}
+}
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_copyConstruct(
+		Crx_C_Os_FileSystem_Io * pThis, Crx_C_Os_FileSystem_Io const * CRX_NOT_NULL pIo)
+	{exit();}
+
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io * crx_c_os_fileSystem_io_new()
+{
+	Crx_C_Os_FileSystem_Io * vReturn = ((Crx_C_Os_FileSystem_Io *)malloc(
+			sizeof(Crx_C_Os_FileSystem_Io)));
+
+	if(vReturn != NULL)
+		{crx_c_os_fileSystem_io_construct(vReturn);}
+
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io * crx_c_os_fileSystem_io_copyNew(
+		Crx_C_Os_FileSystem_Io const * CRX_NOT_NULL pIo)
+	{exit();}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io * crx_c_os_fileSystem_io_moveNew(
+		Crx_C_Os_FileSystem_Io * CRX_NOT_NULL pIo)
+{
+	Crx_C_Os_FileSystem_Io * vReturn = ((Crx_C_Os_FileSystem_Io *)malloc(
+			sizeof(Crx_C_Os_FileSystem_Io)));
+
+	if(vReturn != NULL)
+		{memcpy(vReturn, pIo, sizeof(Crx_C_Os_FileSystem_Io));}
+
+	return vReturn;
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_destruct(
+		Crx_C_Os_FileSystem_Io * pThis)
+{
+	size_t vIndex = crx_c_hashTable_getStartIndex(&(pThis->gPrivate_infoOfSequentials));
+	Crx_C_Tree_Iterator vIterator /*= ?*/;
+
+	crx_c_tree_iterator_construct(&vIterator, &(pThis->gPrivate_regionsByAddress));
+	
+	crx_c_string_destruct(&(pThis->gPrivate_internalFullPath));
+	
+	while(vIndex != HashTable::getEndIndex())
+	{
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * const tInfoOfSequential = 
+				*((Crx_C_Os_FileSystem_Io_InfoOfSequential * const *)
+				crx_c_hashTable_getElementFromIndex(&(pThis->gPrivate_infoOfSequentials), vIndex));
+
+		crx_c_os_fileSystem_io_infoOfSequential_destruct(tInfoOfSequential);
+		crx_c_os_fileSystem_io_infoOfSequential_free(tInfoOfSequential);
+
+		vIndex = HashTable::getNextIndex();
+	}
+
+	crx_c_tree_iterator_reset(&vIterator);
+	while(crx_c_tree_iterator_isValid(&vIterator))
+	{
+		Crx_C_Os_FileSystem_Io_Region * const tRegion = 
+				*((Crx_C_Os_FileSystem_Io_Region * const *)crx_c_tree_iterator_get(&vIterator));
+
+		crx_c_os_fileSystem_io_region_free(tRegion);
+	}
+	crx_c_tree_destruct(&(pThis->gPrivate_regionsByOffset));
+	crx_c_tree_destruct(&(pThis->gPrivate_regionsByAddress));
 	
 	
+	//WE DO NOT NEED TO FREE SPACE WITH THIS BECAUSE THE PORTIONS ARE PART OF THE InfoOfSequential
+	//		AND Regions INTANCES THAT Io IS HOLDING.
+	crx_c_tree_destruct(&(pThis->gPrivate_portions__locked));
+	
+	if(pThis->gPrivate_isRwLockInitialized)
+	{
+		int32_t tResult = (crx_c_pthread_thread_crx_isSelfAPthread() ? 
+				crx_c_pthread_rwlock_destroy(&(pThis->gPrivate_rwLock)) : -1);
+		int32_t tResult2 = (crx_c_pthread_thread_crx_isSelfAPthread() ? 
+				crx_c_pthread_rwlock_destroy(&(pThis->gPrivate_rwLock__lockedPortions)) : -1);
+
+		assert((tResult == 0) && (tResult2 == 0));
+	}
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() bool
+		crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+		Crx_C_Os_FileSystem_Io * pThis, uint64_t pStartOffset, uint64_t pExclusiveEndOffset, 
+		bool * pIsNoError, Crx_C_Array/*<Crx_C_Os_FileSystem_Io_Region *>*/ pRegions)
+{
+	Crx_C_Tree_Iterator vIterator /*= ?*/;
+	Crx_C_Os_FileSystem_Io_Region vRegion /*= ?*/;
+	bool vIsNoError = true;
+	bool vReturn = false;
+
+	crx_c_tree_iterator_construct(&vIterator, &(pThis->gPrivate_regionsByOffset));
+	CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Io_Region, &vRegion);
+	
+	/*
+	OVERLLAPING REGIONS ARE NO LONGER ALLOWED PER THE ORIGINAL DESIGN.
+	
+	if(pStartOffset < CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE)
+		{crx_c_tree_iterator_reset(&vIterator);}
+	else
+	{
+		Crx_C_Os_FileSystem_Io_Region tRegion /*= ?* /;
+		
+		CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Io_Region, &tRegion);
+
+		tRegion.gBaseOffset = pStartOffset - CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE;
+		crx_c_tree_iterator_setToPositionOf(&vIterator, &tRegion, 
+				CRX__C__TREE__EDGE__LEFT);
+
+		/*while(crx_c_tree_iterator_isValid(&vIterator))
+		{
+			Crx_C_Os_FileSystem_Io_Region * tRegion2 = 
+					*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_tree_iterator_unsafeGet(&vIterator));
+					
+			if((tRegion2->gBaseOffset + CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE) <= 
+					pStartOffset)
+				{crx_c_tree_iterator_prev(&vIterator);}
+			else
+				{break;}
+		}* /
+	}*/
+
+	vRegion.gBaseOffset = pStartOffset;
+	crx_c_tree_iterator_setToPositionOf(&vIterator, &vRegion, CRX__C__TREE__EDGE__LEFT);
+	
+	if(crx_c_tree_iterator_isValid(&vIterator))
+		{crx_c_tree_iterator_next(&vIterator);}
+	else
+		{crx_c_tree_iterator_reset(&vIterator);}
+
+	while(crx_c_tree_iterator_isValid(&vIterator))
+	{
+		Crx_C_Os_FileSystem_Io_Region * vRegion = 
+				*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_tree_iterator_unsafeGet(&vIterator));
+
+		if(!(((vRegion->gBaseOffset < pStartOffset) && 
+						((vRegion->gBaseOffset + vRegion->gLength) < 
+						pStartOffset)) ||
+				((vRegion->gBaseOffset > pExclusiveEndOffset) && 
+						((vRegion->gBaseOffset + vRegion->gLength) > pExclusiveEndOffset))))
+		{
+			vReturn = true;
+
+			if(pRegions__marked != NULL)
+			{
+				vIsNoError = crx_c_array_push(&pRegions__marked, &vRegion);
+
+				if(vIsNoError && crx_c_pthread_rwlock_wrlock(
+						&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+				{
+					vRegion->gNumberOfHeldPointers = vRegion->gNumberOfHeldPointers + 1;
+
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+				}
+				else
+					{vIsNoError = false;}
+			}
+		}
+		
+		if((!vReturn || (pRegions__marked != NULL)) && vIsNoError && 
+				(vRegion->gBaseOffset < pExclusiveEndOffset))
+			{crx_c_tree_iterator_next(&vIterator);}
+		else
+			{break;}
+	}
+	
+	if(pIsNoError != NULL)
+		{*pIsNoError = vIsNoError;}
+
+	crx_c_tree_iterator_destruct(&vIterator);
+	
+	return vReturn;
+}
+CRX__LIB__PRIVATE_C_FUNCTION() Crx_C_Os_FileSystem_Io_Region *
+		crx_c_os_fileSystem_io_private_unsafeGetTheRegionThatFullyEncapsulatesTheSpan(
+		Crx_C_Os_FileSystem_Io * pThis, uint64_t pStartOffset, uint64_t pExclusiveEndOffset)
+{
+	/*OVERLLAPING REGIONS ARE NO LONGER ALLOWED PER THE ORIGINAL DESIGN.*/
+	Crx_C_Tree_Iterator vIterator /*= ?*/;
+	Crx_C_Os_FileSystem_Io_Region vRegion /*= ?*/;
+	Crx_C_Os_FileSystem_Io_Region * vReturn = NULL;
+
+	crx_c_tree_iterator_construct(&vIterator, &(pThis->gPrivate_regionsByOffset));
+	CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Io_Region, &vRegion);
+	
+	
+	vRegion.gBaseOffset = pStartOffset;
+	crx_c_tree_iterator_setToPositionOf(&vIterator, &vRegion, CRX__C__TREE__EDGE__LEFT);
+	
+	if(crx_c_tree_iterator_isValid(&vIterator))
+	{
+		Crx_C_Os_FileSystem_Io_Region * tRegion = 
+				*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_tree_iterator_unsafeGet(&vIterator));
+
+		if((tRegion->gBaseOffset >= pStartOffset) && 
+				((tRegion->gBaseOffset + tRegion->gLength) <= pExclusiveEndOffset))
+			{vReturn = tRegion;}
+	}
+
+	crx_c_tree_iterator_destruct(&vIterator);
+	
+	return vReturn;
+}
+CRX__LIB__PRIVATE_C_FUNCTION() Crx_C_Os_FileSystem_Io_Region *
+		crx_c_os_fileSystem_io_private_unsafeGetTheRegionThatContainsTheAddress(
+		Crx_C_Os_FileSystem_Io * pThis, void * pAddress)
+{
+	/*OVERLLAPING REGIONS ARE NO LONGER ALLOWED PER THE ORIGINAL DESIGN.*/
+	Crx_C_Tree_Iterator vIterator /*= ?*/;
+	Crx_C_Os_FileSystem_Io_Region vRegion /*= ?*/;
+	Crx_C_Os_FileSystem_Io_Region * vReturn = NULL;
+
+	crx_c_tree_iterator_construct(&vIterator, &(pThis->gPrivate_regionsByAddress));
+	CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Io_Region, &vRegion);
+	
+	
+	vRegion.gBaseAddress = ((unsigned char *)pAddress);
+	crx_c_tree_iterator_setToPositionOf(&vIterator, &vRegion, CRX__C__TREE__EDGE__LEFT);
+	
+	if(crx_c_tree_iterator_isValid(&vIterator))
+	{
+		Crx_C_Os_FileSystem_Io_Region * tRegion = 
+				*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_tree_iterator_unsafeGet(&vIterator));
+
+		if((tRegion->gBaseAddress <= pStartOffset) && 
+				(pStartOffset <= (tRegion->gBaseAddress + ((size_t)tRegion->gLength))))
+			{vReturn = tRegion;}
+	}
+
+	crx_c_tree_iterator_destruct(&vIterator);
+	
+	return vReturn;
+}
+
+
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_private_patientlyLockForReadRwLock(
+		Crx_C_Os_FileSystem_Io * pThis, Crx_C_Pthread_RwLock * CRX_NOT_NULL pRwLock)
+{
+	uint32_t vUnlockCount = 0;
+	int32_t vReturn = crx_c_pthread_rwlock_rdlock(pRwLock);
+
+	while((vReturn == EAGAIN) && (vUnlockCount < 4))
+	{
+		crx_c_pthread_sched_crx_runOtherThreadsInstead();
+		vReturn = crx_c_pthread_rwlock_rdlock(pRwLock);
+		vUnlockCount = vUnlockCount + 1;
+	}
+	
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(
+		Crx_C_Os_FileSystem_Io * pThis, Crx_C_Pthread_RwLock * CRX_NOT_NULL pRwLock)
+{
+	uint32_t vUnlockCount = 0;
+	int32_t vReturn = crx_c_pthread_rwlock_wrlock(pRwLock);
+
+	while((vReturn == EAGAIN) && (vUnlockCount < 4))
+	{
+		crx_c_pthread_sched_crx_runOtherThreadsInstead();
+		vReturn = crx_c_pthread_rwlock_wrlock(pRwLock);
+		vUnlockCount = vUnlockCount + 1;
+	}
+	
+	return vReturn;
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_private_unsafeGetIsExtentLocked(
+		Crx_C_Os_FileSystem_Io * pThis, uint64_t pStartOffset, uint64_t pExclusiveEndOffset,
+		bool * pIsNoError)
+{
+	if(!(pThis->gPrivate_isRwLockInitialized) || 
+			crx_c_pthread_rwlock_rdlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+	{
+		Crx_C_Tree_Iterator tIterator /*= ?*/;
+		bool tReturn = false;
+
+		crx_c_tree_iterator_construct(&tIterator, &(pThis->gPrivate_portions__locked));
+
+		/*
+			WHILE REGIONS ARE NO LONGER ALLOWED TO OVERLAP PER THE ORIGINAL DESIGN, LOCKED 'REGIONS'
+					ARE STILL ALLOWED TO OVERLAP BECAUSE THEY DO NOT AMOUNT TO ANY ACTUAL MEMORY
+					MAPPING
+		*/
+		if(pStartOffset < CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE)
+			{crx_c_tree_iterator_reset(&tIterator);}
+		else
+		{
+			Crx_C_Os_FileSystem_Io_Portion tPortion /*= ?*/;
+			
+			CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Io_Portion, &tPortion);
+
+			tPortion.gBaseOffset = pStartOffset - CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE;
+			crx_c_tree_iterator_setToPositionOf(&tIterator, &tPortion, 
+					CRX__C__TREE__EDGE__LEFT);
+		}
+
+		if(crx_c_tree_iterator_isValid(&tIterator))
+			{crx_c_tree_iterator_next(&tIterator);}
+		else
+			{crx_c_tree_iterator_reset(&tIterator);}
+
+		while(crx_c_tree_iterator_isValid(&tIterator))
+		{
+			Crx_C_Os_FileSystem_Io_Portion * tPortion = *((Crx_C_Os_FileSystem_Io_Portion * *)
+					crx_c_tree_iterator_unsafeGet(&tIterator));
+
+			if(!(((tPortion->gBaseOffset < pStartOffset) && 
+							((tPortion->gBaseOffset + tPortion->gLength) < 
+							pStartOffset)) ||
+					((tPortion->gBaseOffset > pExclusiveEndOffset) && 
+							((tPortion->gBaseOffset + tPortion->gLength) > pExclusiveEndOffset))))
+				{tReturn = true;}
+			
+			if(!tReturn && (tPortion->gBaseOffset < pExclusiveEndOffset))
+				{crx_c_tree_iterator_next(&tIterator);}
+			else
+				{break;}
+		}
+
+		crx_c_tree_iterator_destruct(&tIterator);
+		
+		return tReturn;
+	}
+	else
+	{
+		if(pIsNoError != NULL)
+			{*pIsNoError = false;}
+
+		return true;
+	}
+}
+
+/*
+	WARNING: 
+		- THIS FUNCTION USES AS WRTIE LOCK, THE LOCK Io::gPrivate_rwLock.
+		- THE HANDLE RETURNED IS NOT SAFE TO USE WITHOUT A LOCK. THIS MEANS THAT THE HANDLE MUST BE
+				REFERED TO DIRECTLY USING pThis, WHILE IN THE LOCK.
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() Crx_C_Os_FileSystem_OsFileHandle 
+		crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForSequentialAccess(
+		Crx_C_Os_FileSystem_Io * pThis)
+{
+	if(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{return pThis->gPrivate_osFileHandle;}
+	else if(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+	{
+		if(!(pThis->gPrivate_isRwLockInitialized) ? crx_c_pthread_crx_isSameThreadAs(
+				&(pThis->gPrivate_rawId)) : 
+				(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0))
+		{
+			if((pThis->gPrivate_osFileHandle == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) &&
+					(pThis->gPrivate_osFileHandle__2 != 
+					CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+			{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+				/*
+					ARTIFICIALLY IMPOSING THE SAME RESTRICTION REQUIRED FOR WINDOWS 95.
+					IF WE ARE HERE, EITHER ACCESS IS EXCLUSIVE, OR THE FILE WAS OPENED USING A
+					RECORD
+				*/
+				if((crx_c_tree_getSize(&(pThis->gPrivate_regionsByAddress)) == 0) &&
+						(pThis->gPrivate_numberOfActiveRegionCreations == 0))
+				{
+					pThis->gPrivate_osFileHandle = pThis->gPrivate_osFileHandle__2;
+					pThis->gPrivate_osFileHandle__2 = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+				}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+				//FAVOR KEEPING CURRENT MAPPING OPEN.
+				if((pThis->gPrivate_fileShareMode == 
+						CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE) || 
+						crx_c_string_isEmpty(&(pThis->gPrivate_internalFullPath)))
+				{
+					if((crx_c_tree_getSize(&(pThis->gPrivate_regionsByAddress)) == 0) &&
+							(pThis->gPrivate_numberOfActiveRegionCreations == 0))
+					{
+						if(pThis->gPrivate_mappingHandle != NULL)
+						{
+							CloseHandle(pThis->gPrivate_mappingHandle);
+							pThis->gPrivate_mappingHandle = NULL;
+						}
+
+						pThis->gPrivate_osFileHandle = pThis->gPrivate_osFileHandle__2;
+						pThis->gPrivate_osFileHandle__2 = 
+								CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+					}
+				}
+				else
+				{
+					Crx_C_Os_FileSystem_Contract tContract /*= ?*/
+
+					//FORMAL ERROR
+					CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Contract, tContract);
+					{
+						tContract.gCharacterSet = CRX__C__OS__INFO__CHARACTER_SET__UNICODE;
+						tContract.gGuaranteeLevel = 1;
+						tContract.gFileSystemGuaranteeLevel = 1;
+						tContract.gFileSystemRuntimeGuaranteeLevel = 1;
+						tContract.gResolutionModel = CRX__C__OS__FILE_SYSTEM__RESOLUTION_MODEL__PRECISE;
+					}
+
+					pThis->gPrivate_osFileHandle = crx_c_os_fileSystem_internal_doOpen(
+							&(pThis->gPrivate_internalFullPath), ((size_t)(-1)), NULL, 
+							CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__OPEN, 
+							pThis->gPrivate_fileAccessMode, pThis->gPrivate_fileShareMode,
+							&tContract, NULL);
+				}
+#endif
+			}
+
+			if(pThis->gPrivate_isRwLockInitialized)
+				{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+		}
+
+		return pThis->gPrivate_osFileHandle;
+	}
+	else
+		{return INVALID_HANDLE_VALUE;}
+}
+/*
+	WARNING: 
+		- THE HANDLE RETURNED IS NOT SAFE TO USE WITHOUT A LOCK. THIS MEANS THAT THE HANDLE MUST BE
+				REFERED TO DIRECTLY USING pThis, WHILE IN THE LOCK.
+		- THIS FUNCTION USES THE LOCK Io::gPrivate_rwLock.
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() Crx_C_Os_FileSystem_OsFileHandle 
+		crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForRegionalAccess(
+		Crx_C_Os_FileSystem_Io * pThis)
+{
+	if(pThis->gPrivate_fileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY)
+		{return INVALID_HANDLE_VALUE;}
+
+	if(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{return pThis->gPrivate_osFileHandle__2;}
+	else if(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+	{
+		if(!(pThis->gPrivate_isRwLockInitialized) ? crx_c_pthread_crx_isSameThreadAs(
+				&(pThis->gPrivate_rawId)) : 
+				(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0))
+		{
+			if((pThis->gPrivate_osFileHandle__2 == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) &&
+					(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+			{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+				/*
+					ARTIFICIALLY IMPOSING THE SAME RESTRICTION REQUIRED FOR WINDOWS 95.
+					IF WE ARE HERE, EITHER ACCESS IS EXCLUSIVE, OR THE FILE WAS OPENED USING A
+					RECORD
+				*/
+				if(crx_c_tree_getSize(&(pThis->gPrivate_portions__locked)) == 0)
+				{
+					if((crx_c_hashTable_getLength(&(pThis->gPrivate_infoOfSequentials)) == 0) ||
+							(pThis->gPrivate_numberOfActiveSequentialRequests == 0))
+					{
+						pThis->gPrivate_osFileHandle__2 = pThis->gPrivate_osFileHandle;
+						pThis->gPrivate_osFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+					}
+				}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+				/*if((crx_c_hashTable_getLength(&(pThis->gPrivate_infoOfSequentials)) == 0) ||
+						(((pThis->gPrivate_fileShareMode == 
+								CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE) || 
+								crx_c_string_isEmpty(&(pThis->gPrivate_internalFullPath)))) &&
+								(pThis->gPrivate_numberOfActiveSequentialRequests == 0))*/
+				if((pThis->gPrivate_fileShareMode == 
+						CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE) || 
+						crx_c_string_isEmpty(&(pThis->gPrivate_internalFullPath)))
+				{
+					if((crx_c_hashTable_getLength(&(pThis->gPrivate_infoOfSequentials)) == 0) ||
+							(pThis->gPrivate_numberOfActiveSequentialRequests == 0))
+					{
+						pThis->gPrivate_osFileHandle__2 = pThis->gPrivate_osFileHandle;
+						pThis->gPrivate_osFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+					}
+				}
+				else
+				{
+					Crx_C_Os_FileSystem_Contract tContract /*= ?*/
+
+					//FORMAL ERROR
+					CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Contract, tContract);
+					{
+						tContract.gCharacterSet = CRX__C__OS__INFO__CHARACTER_SET__UNICODE;
+						tContract.gGuaranteeLevel = 1;
+						tContract.gFileSystemGuaranteeLevel = 1;
+						tContract.gFileSystemRuntimeGuaranteeLevel = 1;
+						tContract.gResolutionModel = 
+								CRX__C__OS__FILE_SYSTEM__RESOLUTION_MODEL__PRECISE;
+					}
+
+					pThis->gPrivate_osFileHandle__2 = crx_c_os_fileSystem_internal_doOpen(
+							&(pThis->gPrivate_internalFullPath), ((size_t)(-1)), NULL, 
+							CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__OPEN, 
+							pThis->gPrivate_fileAccessMode, pThis->gPrivate_fileShareMode,
+							&tContract, NULL);
+				}
+
+				/*if(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+				{
+					pThis->gPrivate_mappingHandle = 
+							crx_c_os_fileSystem_private_win32_doCreateFileMapping(
+							&(pThis->gPrivate_osFileHandle__2), ((pThis->gPrivate_fileAccessMode == 
+							CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? PAGE_READONLY :
+							PAGE_READWRITE), ((pThis->gPrivate_expectedByteSize >=
+							pThis->gPrivate_maximumTraversedByteSize) ? 
+							pThis->gPrivate_expectedByteSize : 
+							pThis->gPrivate_maximumTraversedByteSize), true);
+
+					if(pThis->gPrivate_mappingHandle == NULL)
+					{
+						if(pThis->gPrivate_osFileHandle == 
+								CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+						{
+							pThis->gPrivate_osFileHandle = pThis->gPrivate_osFileHandle__2;
+							pThis->gPrivate_osFileHandle__2 = 
+									CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+						}
+						else
+						{
+							crx_c_os_fileSystem_close(pThis->gPrivate_osFileHandle__2);
+							pThis->gPrivate_osFileHandle__2 = 
+									CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+						}
+					}
+				}*/
+#endif
+			}
+
+			if(pThis->gPrivate_isRwLockInitialized)
+				{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+		}
+
+		return pThis->gPrivate_osFileHandle__2;
+	}
+	else
+		{return INVALID_HANDLE_VALUE;}
+}
+
+/*
+	IF pExpectedFileByteSize  IS 0, THE SIZE IS ASSUMED THE CURRENT FILE SIZE.
+*/
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_open(Crx_C_Os_FileSystem_Io * pThis
+		Crx_C_String const * CRX_NOT_NULL pFileFullPath, uint32_t pDepthLimitOfReparsePoints,
+		Crx_C_Os_FileSystem_FileOpenMode pFileOpenMode,
+		Crx_C_Os_FileSystem_FileAccessMode pFileAccessMode,
+		Crx_C_Os_FileSystem_FileShareMode pFileShareMode,
+		Crx_C_Os_FileSystem_Contract const * CRX_NOT_NULL pContract,
+		size_t pExpectedFileByteSize, bool pIsToFavorMemoryMapping)
+{
+	bool vReturn = false;
+
+	if((pThis->gPrivate_osFileHandle == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) &&
+			(pThis->gPrivate_osFileHandle__2 == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+	{
+		if(!(pThis->gPrivate_isRwLockInitialized) ? crx_c_pthread_crx_isSameThreadAs(
+				&(pThis->gPrivate_rawId)) :
+				(crx_c_pthread_rwlock_trywrlock(&(pThis->gPrivate_rwLock)) == 0))
+		{
+			if((pThis->gPrivate_osFileHandle == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) &&
+					(pThis->gPrivate_osFileHandle__2 == 
+					CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+			{
+				pThis->gPrivate_osFileHandle = crx_c_os_fileSystem_internal_doOpen(pFileFullPath, 
+						pDepthLimitOfReparsePoints, NULL, pFileOpenMode, pFileAccessMode, 
+						pFileShareMode, pContract, &(pThis->gPrivate_internalFullPath));
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+				/*
+					BECAUSE WE HAVE TO SUPPORT EXCLUSIVE ACCESS, AND BECAUSE ON WINDOWS 95 WE
+					CAN NOT USE A FILE HANDLE WHILE IT IS BEING USED WITH CreateFileMapping(), 
+					AND BECAUSE OPENING A NEW FILE HANDLE WOULD NOT BE POSSIBLE UNDER EXCLUSIVE
+					ACCESS, WE IMPOSE THE RESTRICTION THAT A FILE CAN NOT INTERNALLY HAVE BOTH 
+					REGIONAL AND SEQUENTIAL ACCESS AT THE SAME TIME. REMEMBER, WITH WRITE ONLY, WE 
+					CAN NOT HAVE REGIONAL ACCESS AT ALL.
+				*/
+				if((pFileAccessMode != CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY) &&
+						(pFileShareMode != CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE))
+					{pThis->gPrivate_osFileHandle__2 = pThis->gPrivate_osFileHandle;}
+#endif
+				//ON WINDOWS WE WAIT UNTIL LATER TO OPEN A SECOND HANDLE IF NECESSARY
+
+				if(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+				{
+					pThis->gPrivate_isMemoryMappingPrefered = pIsToFavorMemoryMapping;
+					pThis->gPrivate_expectedByteSize = pExpectedFileByteSize;
+					pThis->gPrivate_fileAccessMode = pFileAccessMode;
+					pThis->gPrivate_fileShareMode = pFileShareMode;
+					
+					if(crx_c_os_fileSystem_io_private_getFileSize(pThis,
+							&(pThis->gPrivate_hiddenByteSize), pThis->gPrivate_osFileHandle))
+					{
+						pThis->gPrivate_maximumTraversedByteSize = pThis->gPrivate_hiddenByteSize;
+						
+						if((pThis->gPrivate_expectedByteSize == 0) || 
+								(pThis->gPrivate_expectedByteSize < pThis->gPrivate_hiddenByteSize))
+							{pThis->gPrivate_expectedByteSize = pThis->gPrivate_hiddenByteSize;}
+
+						vReturn = true;
+					}
+					else
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						crx_c_os_fileSystem_private_posix_rawClose(pThis->gPrivate_osFileHandle);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						CloseHandle(pThis->gPrivate_osFileHandle);
+#endif				
+						pThis->gPrivate_osFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+						pThis->gPrivate_osFileHandle__2 = 
+								CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+					}
+				}
+			}
+
+			if(pThis->gPrivate_isRwLockInitialized)
+				{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+		}
+	}
+
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_open2(Crx_C_Os_FileSystem_Io * pThis
+		Crx_C_Os_FileSystem_Iterator_Record * pRecord,
+		Crx_C_Os_FileSystem_FileAccessMode pFileAccessMode,
+		Crx_C_Os_FileSystem_FileShareMode pFileShareMode,
+		size_t pExpectedFileByteSize, bool pIsToFavorMemoryMapping)
+{
+	bool vReturn = false;
+
+	if((pThis->gPrivate_osFileHandle == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) &&
+			(pThis->gPrivate_osFileHandle__2 == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+	{
+		if(!(pThis->gPrivate_isRwLockInitialized) ? crx_c_pthread_crx_isSameThreadAs(
+				&(pThis->gPrivate_rawId)) :
+				(crx_c_pthread_rwlock_trywrlock(&(pThis->gPrivate_rwLock)) == 0))
+		{
+			if((pThis->gPrivate_osFileHandle == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) &&
+					(pThis->gPrivate_osFileHandle__2 == 
+					CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+			{
+				pThis->gPrivate_osFileHandle = crx_c_os_fileSystem_open2(pRecord, 
+						pFileAccessMode, pFileShareMode);
+				/*
+					 ON WINDOWS 95 WE WOULD REQUIRE A SEPERATE HANDLE FOR MAPPING, BUT BECAUSE WE
+					 CAN NOT AFFORD TO OPEN THE HANDLE AGAIN WHEN USING RECORDS, WE IMPOSE THE SAME
+					 LIMITATION WHEN THE FILE IS OPENED FOR EXCLUSIVE ACCESS. WHILE OTHER SYSTEMS
+					 DO NOT HAVE THE NEED FOR OPENING A NEW FILE HANDLE FOR THE MAPPING, WE HAVE
+					 TO IMPOSE THE SAME LIMITATION ON THEM TO KEEP THE ABSTRACT VALID.
+				*/
+				pThis->gPrivate_osFileHandle__2 = INVALID_HANDLE_VALUE;
+
+				crx_c_string_empty(&(pThis->gPrivate_internalFullPath));
+
+				if(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+				{
+					pThis->gPrivate_isMemoryMappingPrefered = pIsToFavorMemoryMapping;
+					pThis->gPrivate_expectedByteSize = pExpectedFileByteSize;
+					pThis->gPrivate_fileAccessMode = pFileAccessMode;
+					pThis->gPrivate_fileShareMode = pFileShareMode;
+
+					if(crx_c_os_fileSystem_io_private_getFileSize(pThis,
+							&(pThis->gPrivate_hiddenByteSize), pThis->gPrivate_osFileHandle))
+					{
+						pThis->gPrivate_maximumTraversedByteSize = pThis->gPrivate_hiddenByteSize;
+						
+						if((pThis->gPrivate_expectedByteSize == 0) || 
+								(pThis->gPrivate_expectedByteSize < pThis->gPrivate_hiddenByteSize))
+							{pThis->gPrivate_expectedByteSize = pThis->gPrivate_hiddenByteSize;}
+
+						vReturn = true;
+					}
+					else
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						crx_c_os_fileSystem_private_posix_rawClose(pThis->gPrivate_osFileHandle);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						CloseHandle(pThis->gPrivate_osFileHandle);
+#endif				
+						pThis->gPrivate_osFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+					}
+				}
+			}
+
+			if(pThis->gPrivate_isRwLockInitialized)
+				{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+		}
+	}
+	else
+		{return false;}
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_private_getFileSize(
+		Crx_C_Os_FileSystem_Io * pThis, uint64_t * CRX_NOT_NULL pReturn,
+		Crx_C_Os_FileSystem_OsFileHandle pOsFileHandle)
+{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	Crx_NonCrxed_Os_Posix_Dll_Libc_Stat vStat /*= ?*/;
+	bool vIsNoError = true;
+
+	CRX__SET_TO_ZERO(Crx_NonCrxed_Os_Posix_Dll_Libc_Stat, vStat);
+	
+	if(vIsNoError && (crx_c_os_fileSystem_private_posix_callFstat(pOsFileHandle, &vStat) != 0))
+	{
+		*pReturn = ((uint64_t)(vStat.st_size > 0 ? vStat.st_size : 0));
+
+		return true;
+	}
+	else
+	{
+		*pReturn = 0;
+
+		return false;
+	}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	BY_HANDLE_FILE_INFORMATION vByHandleFileInformation /*= ?*/;
+	bool vIsNoError = true;
+	uint64_t vFileSize = 0;
+
+	if(crx_c_os_fileSystem_internal_win32_getFileInformationByHandle(
+				pOsFileHandle, &vByHandleFileInformation) != 0)
+	{
+		ULARGE_INTEGER tULargeInteger;
+
+		tULargeInteger.u.HighPart = vByHandleFileInformation.nFileSizeHigh;
+		tULargeInteger.u.LowPart = vByHandleFileInformation.nFileSizeLow;
+		
+		*pReturn = tULargeInteger.QuadPart;
+
+		return true;
+	}
+	else
+	{
+		*pReturn = 0;
+
+		return false;
+	}
+#endif
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_getFileSize(
+		Crx_C_Os_FileSystem_Io * pThis, uint64_t * CRX_NOT_NULL pReturn,
+		Crx_C_Os_FileSystem_OsFileHandle pOsFileHandle)
+{
+	bool vReturn = false;
+
+	if((pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) ||
+			(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+	{
+		if(!(pThis->gPrivate_isRwLockInitialized) ? crx_c_pthread_crx_isSameThreadAs(
+				&(pThis->gPrivate_rawId)) :
+				(crx_c_pthread_rwlock_rdlock(&(pThis->gPrivate_rwLock)) == 0))
+		{
+			if((pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE) ||
+					(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+			{
+				*pReturn = pThis->gPrivate_maximumTraversedByteSize;
+				
+				vReturn = true;
+			}
+
+			if(pThis->gPrivate_isRwLockInitialized)
+				{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+		}
+	}
+	
+	if(!vReturn)
+		{*pReturn = false;}
+
+	return vReturn;
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_getSequentialAccessorId(
+		Crx_C_Os_FileSystem_Io * pThis, uint32_t * CRX_NOT_NULL pReturn,
+		uint32_t pPreferedMinimumNumberOfBytesToWrite, bool pIsToIgnoreRegions)
+{
+	if(!(pThis->gPrivate_isRwLockInitialized))
+	{
+		if(crx_c_pthread_crx_isSameThreadAs(&(pThis->gPrivate_rawId)))
+		{
+			uint16_t tId = 0;
+			bool tReturn = true;
+
+			if(!crx_c_hashTable_hasKey(&(pThis->gPrivate_infoOfSequentials), &tId))
+			{
+				Crx_C_Os_FileSystem_Io_InfoOfSequential * tInfoOfSequential = 
+						crx_c_os_fileSystem_io_infoOfSequential_new(
+						pPreferedMinimumNumberOfBytesToWrite, pIsToIgnoreRegions);
+
+				if(crx_c_hashTable_set(&(pThis->gPrivate_infoOfSequentials), 
+						&tId, &tInfoOfSequential))
+					{tInfoOfSequential = NULL;}
+				else
+					{tReturn = false;}
+			}
+			
+			*pReturn = tId;
+
+			return tReturn;
+		}
+		else
+			{return false;}
+	}
+	else
+	{
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * tInfoOfSequential = 
+				crx_c_os_fileSystem_io_infoOfSequential_new(pPreferedMinimumNumberOfBytesToWrite,
+				pIsToIgnoreRegions);
+		bool tReturn = (tInfoOfSequential != NULL);
+
+		if(tReturn && (crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0))
+		{
+			if(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE > 
+					CRX__C__OS__FILE_SYSTEM__IO__MAXIMUM_MEMORY_PAGE_SIZE_TO_CORRECT_BUFFER_WITH)
+			{
+				if(((crx_c_tree_getSize(&(pThis->gPrivate_regionsByOffset)) > 0) ||
+						(pThis->gPrivate_numberOfActiveRegionCreations > 0)) &&
+						(crx_c_hashTable_getSize(&(pThis->gPrivate_infoOfSequentials)) > 1))
+					{tReturn = false;}
+			}
+
+			if(tReturn)
+			{
+				if(pThis->gAccessorCount < UINT32_MAX)
+					{pThis->gAccessorCount = pThis->gAccessorCount + 1;}
+
+				while(crx_c_hashTable_hasKey(&(pThis->gPrivate_infoOfSequentials), 
+						&(pThis->gAccessorCount)))
+				{
+					if(pThis->gAccessorCount < UINT32_MAX)
+						{pThis->gAccessorCount = pThis->gAccessorCount + 1;}
+					else
+					{
+						tReturn = false;
+						
+						break;
+					}
+				}
+			}
+
+			if(tReturn)
+			{
+				if(crx_c_hashTable_set(&(pThis->gPrivate_infoOfSequentials), 
+						&(pThis->gAccessorCount), &tInfoOfSequential))
+					{tInfoOfSequential = NULL;}
+				else
+					{tReturn = false;}
+			}
+			
+			crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+		}
+		else
+			{tReturn = false;}
+
+		if(tReturn)
+			{&pReturn = pThis->gAccessorCount;}
+		else
+			{&pReturn = 0;}
+		
+		if(tInfoOfSequential != NULL)
+		{
+			crx_c_os_fileSystem_io_infoOfSequential_destruct(tInfoOfSequential);
+			crx_c_os_fileSystem_io_infoOfSequential_free(tInfoOfSequential);
+			tInfoOfSequential = NULL;
+		}
+		
+		return tReturn;
+	}
+}
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_returnSequentialAccessorId(
+		Crx_C_Os_FileSystem_Io * pThis, uint32_t pSequentialAccessorId)
+{
+	bool vReturn = true;
+
+	if((pSequentialAccessorId != 0) && pThis->gPrivate_isRwLockInitialized)
+	{
+		if(crx_c_pthread_thread_crx_isSelfAPthread())
+		{
+			if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0)
+			{
+				if(crx_c_hashTable_hasKey(&(pThis->gPrivate_infoOfSequentials), 
+						&pSequentialAccessorId))
+				{
+					Crx_C_Os_FileSystem_Io_InfoOfSequential * const tInfoOfSequential = 
+							*((Crx_C_Os_FileSystem_Io_InfoOfSequential * const *)crx_c_hashTable_get(
+							&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId));
+
+					if(!tInfoOfSequential->gIsInUse)
+					{
+						crx_c_hashTable_remove(&(pThis->gPrivate_infoOfSequentials), 
+								&pSequentialAccessorId);
+					}
+					else
+						{vReturn = false;}
+				}
+
+				if(vReturn)
+				{
+					if(tInfoOfSequential->gWriteBufferLength > 0)
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+						crx_c_os_fileSystem_internal_posix_doPwrite(pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gWriteBufferLength, tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						crx_c_os_fileSystem_private_win32_doWriteFile(pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gWriteBufferLength, tInfoOfSequential->gOffset);
+#endif
+					}
+				}
+				
+				crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+
+				if(vReturn)
+				{
+					crx_c_os_fileSystem_io_infoOfSequential_destruct(tInfoOfSequential);
+					crx_c_os_fileSystem_io_infoOfSequential_free(tInfoOfSequential);
+					tInfoOfSequential = NULL;
+				}
+			}
+			else
+				{vReturn = false;}
+		}
+		else
+			{vReturn = false;}
+	}
+
+	return vReturn;
+}
+/*
+	REMEMBER: IF THE FILE IS OPENED WITH CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE SHARE 
+			MODE, STRICTLY SPEAKING, FILE CAN ONLY BE USED FOR REGIONAL ACCESS OR SEQUENTIAL ACCESS 
+			BUT NOT BOTH. IF ANY REGIONS ARE OPEN, SEQUENTIAL ACCESS HAS TO BE DONE USING REGIONS.
+	REMEMBER: IF THE FILE IS OPENED USING A RECORD, STRICTLY SPEAKING, FILE CAN ONLY BE USED FOR 
+			REGIONAL ACCESS OR SEQUENTIAL ACCESS BUT NOT BOTH. IF ANY REGIONS ARE OPEN, SEQUENTIAL 
+			ACCESS HAS TO BE DONE USING REGIONS.
+*/
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_write(
+		Crx_C_Os_FileSystem_Io * pThis, uint32_t pSequentialAccessorId,
+		void * CRX_NOT_NULL pBytes, utin64_t pLength)
+{
+	CRX_SCOPE_META
+	if(pThis->gPrivate_fileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY)
+		{return 0;}
+	/*else if(crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForSequentialAccess(pThis) == 
+			CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{return false;}*/
+
+	CRX_SCOPE
+	bool vIsNoError = true;
+
+	crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForSequentialAccess(pThis);
+	
+	if(!(pThis->gPrivate_isRwLockInitialized) && !crx_c_pthread_crx_isSameThreadAs(
+			&(pThis->gPrivate_rawId)))
+		{vIsNoError = false;}
+
+	if(vIsNoError && (!(pThis->gPrivate_isRwLockInitialized) ||
+			(crx_c_pthread_rwlock_rdlock(&(pThis->gPrivate_rwLock)) == 0)))
+	{
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * tInfoOfSequential = NULL;
+		bool tIsLocked = pThis->gPrivate_isRwLockInitialized;
+
+		if(crx_c_hashTable_hasKey(&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId))
+		{
+			tInfoOfSequential = ((Crx_C_Os_FileSystem_Io_InfoOfSequential *)crx_c_hashTable_get(
+					&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId));
+
+			if(!tInfoOfSequential->gIsInUse)
+				{tInfoOfSequential->gIsInUse = true;}
+			else
+				{vIsNoError = false;}
+		}
+		else
+			{vIsNoError = false;}
+
+		if(vIsNoError && 
+				(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+			bool tIsToOnlyBuffer = false;
+			bool tIsToExtendToASecondBufferAndOnly = false;
+			bool tIsToAddressRegions = false;
+			uint64_t tAnticipatedOffset = 0;
+			bool tIsGrowing = false;
+
+			if(pThis->gPrivate_isRwLockInitialized)
+			{
+				//AVOIDING ATOMICS FOR THE TIME BEING
+				if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+				{
+					pThis->gPrivate_numberOfActiveSequentialRequests = 
+							pThis->gPrivate_numberOfActiveSequentialRequests + 1;
+
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+				}
+				else
+					{vIsNoError = false;}
+			}
+
+			if(vIsNoError)
+			{
+				tIsToExtendToASecondBufferAndOnly = ((pLength >
+						(tInfoOfSequential->gBufferCapacity - tInfoOfSequential->gIndex))  &&
+						((pLength - (tInfoOfSequential->gBufferCapacity - 
+						tInfoOfSequential->gIndex)) <= tInfoOfSequential->gBufferCapacity));
+				tIsToOnlyBuffer = ((pLength <= (tInfoOfSequential->gBufferCapacity - 
+								tInfoOfSequential->gIndex)) || tIsToExtendToASecondBufferAndOnly);
+			}
+			
+			if(vIsNoError)
+			{
+				/*
+					BECAUSE OF THIS, IF pThis->gPrivate_numberOfActiveSequentialRequests IS NOT 
+							ZERO WE CAN NOT CREATE NEW REGIONS ON WINDOWS.
+				*/
+				tAnticipatedOffset = tInfoOfSequential->gOffset + 
+						tInfoOfSequential->gIndex + pLength;
+
+				if(tAnticipatedOffset > pThis->gPrivate_hiddenByteSize)
+				{
+					//THIS SHOULD PROTECT REGION CREATION FROM SIZE CHANGING DURING REGION CREATION.
+					if((crx_c_tree_getSize(&(pThis->gPrivate_regionsByOffset)) == 0) &&
+							(pThis->gPrivate_numberOfActiveRegionCreations == 0))
+					{
+						assert(pThis->gPrivate_osFileHandle != 
+								CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE);
+
+						/*Io::gPrivate_numberOfActiveSequentialRequests SHOULD PROTECT SIZE CHANGING
+								FROM REGION CREATION DURING SIZE CHANGING EVEN AFTER LETTING GO
+								OF pThis->gPrivate_rwLock.*/
+
+						tIsToOnlyBuffer = false;
+						tIsGrowing = true;
+					}
+					else
+						{vIsNoError = false;}
+				}
+			}
+			
+			if(vIsNoError && pThis->gPrivate_isRwLockInitialized &&
+					!(tInfoOfSequential->gIsToIgnoreRegions) && 
+					(pThis->gPrivate_fileAccessMode != 
+					CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY))
+				{tIsToAddressRegions = true;}
+
+			if(vIsNoError && tIsToOnlyBuffer && tIsToAddressRegions)
+			{
+				/*IF THE BUFFER IS TO BE USED, AND IS CURRENTLY EMPTY, MEANING A REGION LOCK 
+						SPANNING THE BUFFER SEGMENT IS NOT SET YET, OR IT IS NOT EMPTY AND NEW BUFFER
+						IS ENOUGH TO SATIFY THE REQUEST, WE MUST ENSURE THAT NO CURRENT
+						REGIONS OVERLAP THE UNSET BUFFER, OTHERIWSE WE CAN NOT USE IT. FOR THE 
+						BUFFER, NOT ONLY WE WANT TO FORBID REGIONS OVERLAPPING ITS SEGMENT TO BE 
+						CREATED OR DELETED, WHICH IS WHAT A REGION LOCK IS FOR, BUT WE ALSO WANT NO 
+						REGIONS AT ALL OVERLAPING ITS SEGMENT.
+				*/
+				if((tInfoOfSequential->gWriteBufferLength == 0) || 
+						tIsToExtendToASecondBufferAndOnly)
+				{
+					size_t tStartOffset = tInfoOfSequential->gOffset + 
+							((tInfoOfSequential->gWriteBufferLength == 0) ? 0 : 
+							tInfoOfSequential->gBufferCapacity);
+					size_t tExclusiveEndOffset = tStartOffset + 
+							(tInfoOfSequential->gBufferCapacity * 
+							(((tInfoOfSequential->gWriteBufferLength == 0) &&
+							tIsToExtendToASecondBufferAndOnly) ? 2 : 1));
+					
+					//REMEMBER: WE NEED TO HAVE Io::gPrivate_rwLock LOCKED FOR THIS FUCNITON
+					tIsToOnlyBuffer = 
+						!crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+						pThis, tStartOffset, tExclusiveEndOffset, &vIsNoError, NULL);
+				}
+			}
+			
+			if(vIsNoError && tIsToOnlyBuffer)
+			{
+				/*
+					IN THIS CASE,
+						- WE CAN NOT DEAL WITH REGIONS OVERLAPPING THE SEGMENT
+						- WE MIGHT FLUSH THE CURRENT BUFFER, THEN WRITE TO A NEW BUFFER, BUT NO 
+								MORE.
+						- THE DATA TO BE WRITTEN MIGHT BE SMALL ENOUGH TO FIT THE CURRENT BUFFER,
+								OR LARGE ENOUGH TO NEED ANOTHER BUFFER, BUT NOT LARGER.
+						- THE DATA TO BE WRITTEN CAN NOT ENLARGE THE FILE.
+				*/
+				size_t tRemainingLength = pLength;
+
+				if(tIsToAddressRegions && ((tInfoOfSequential->gWriteBufferLength == 0) ||
+						tIsToExtendToASecondBufferAndOnly))
+				{
+					/*
+						BECAUSE WE WANT TO UNLOCK AS SOON AS POSSIBLE, WE END UP REGION LOCKING
+						THE CURRENT BUFFER SPAN WHICH IS YET TO BE FLUSHED IF NECESSARY OR READ, 
+						AND THE NEXT BUFFER SPAN WHICH IS TO FILLED WITH NEW DATA.
+					*/
+					if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked),
+								&(tInfoOfSequential->gPortion__lock));
+
+						tInfoOfSequential->gPortion__lock.gBaseOffset = tInfoOfSequential->gOffset;
+						tInfoOfSequential->gPortion__lock.gLength = 
+								(tInfoOfSequential->gBufferCapacity * 
+								(tIsToExtendToASecondBufferAndOnly ? 2 : 1));
+						
+						if(!crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock)))
+							{vIsNoError = false;}
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+					else
+						{vIsNoError = false;}
+				}
+
+				if(tIsLocked)//MEANING pThis->gPrivate_isRwLockInitialized
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				if(vIsNoError && tIsToExtendToASecondBufferAndOnly)
+				{
+					if(tInfoOfSequential->gIndex < tInfoOfSequential->gBufferCapacity)
+					{
+						memcpy(tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex, pBytes,
+								tInfoOfSequential->gBufferCapacity - tInfoOfSequential->gIndex);
+						tRemainingLength = tRemainingLength - 
+								(tInfoOfSequential->gBufferCapacity - tInfoOfSequential->gIndex);
+
+						tInfoOfSequential->gIsDirty = true;
+					}
+
+					if(tInfoOfSequential->gIsDirty)
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+								pThis->gPrivate_osFileHandle, 
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#endif
+					}
+
+					if(vIsNoError)
+					{
+						tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+								tInfoOfSequential->gWriteBufferLength;
+						tInfoOfSequential->gIndex = 0;
+						tInfoOfSequential->gIsDirty = false;
+						tInfoOfSequential->gWriteBufferLength = 0;
+					}
+					else
+					{
+						//WE HAVE NOT CHANGED tInfoOfSequential->gIndex NOR 
+						//		tInfoOfSequential->gWriteBufferLength ABOVE FOR THIS VERY SITUATION.
+						
+						//POSSIBLY DISCARDING BUFFERED READ BYTES BUT THAT IS BETTER BECAUSE THEY
+						//		MIGHT HAVE BECOME DIRTY FROM THE ABOVE.
+						tInfoOfSequential->gWriteBufferLength = tInfoOfSequential->gIndex;
+					}
+				}
+
+				if(vIsNoError && (tRemainingLength > 0))
+				{
+					memcpy(tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex, pBytes, 
+							tRemainingLength);
+					tInfoOfSequential->gIndex = tInfoOfSequential->gIndex + tRemainingLength;
+
+					if(tInfoOfSequential->gIndex > tInfoOfSequential->gWriteBufferLength)
+						{tInfoOfSequential->gWriteBufferLength = tInfoOfSequential->gIndex;}
+					tInfoOfSequential->gIsDirty = true;
+				}
+			}
+			else if(vIsNoError && !tIsToAddressRegions)
+			{
+				/*
+					IN THIS CASE,
+						- WE EXPECT NO REGIONS AT ALL.
+						- IF DATA TO BE WRITTEN IS SMALL ENOUGH TO FIT THE CURRENT BUFFER, NO 
+								FLUSHING IS DONE, AND IF LARGER BUT SMALL ENOUGH TO FIT A NEW 
+								BUFFER, ONLY A SINGLE FLUSHING, THE FLUSHING OF THE OLD BUFFER,
+								IS DONE. AND IF LARGER, ONLY A SINGLE FLUSHING IS DONE, AND THE 
+								BUFFER IS NOT USED FURTHER.
+						- THE DATA TO BE WRITTEN MIGHT BE SMALL ENOUGH TO FIT THE CURRENT BUFFER,
+								OR LARGE ENOUGH TO NEED ANOTHER BUFFER, OR LARGE ENOUGH TO NEED 
+								MORE.
+						- THE DATA TO BE WRITTEN COULD ENLARGE THE FILE.
+				*/
+				size_t tRemainingLength = pLength;
+				size_t tTemp = tRemainingLength;
+
+				if(tIsLocked)//MEANING pThis->gPrivate_isRwLockInitialized
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				if(tRemainingLength > (tInfoOfSequential->gBufferCapacity - 
+						tInfoOfSequential->gIndex))
+					{tTemp = (tInfoOfSequential->gBufferCapacity - tInfoOfSequential->gIndex);}
+
+				memcpy(tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex, pBytes, tTemp);
+				tRemainingLength = tRemainingLength - tTemp;
+				tInfoOfSequential->gIndex = tInfoOfSequential->gIndex + tTemp;
+				tInfoOfSequential->gIsDirty = true;
+				
+				if(tInfoOfSequential->gIndex > tInfoOfSequential->gWriteBufferLength)
+					{tInfoOfSequential->gWriteBufferLength = tInfoOfSequential->gIndex;}
+				
+				if(tRemainingLength > 0)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+							pThis->gPrivate_osFileHandle, 
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gBufferCapacity, 
+							tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+							pThis->gPrivate_osFileHandle,
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gBufferCapacity, 
+							tInfoOfSequential->gOffset);
+#endif
+
+					if(vIsNoError)
+					{
+						tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+								tInfoOfSequential->gBufferCapacity;
+						tInfoOfSequential->gIndex = 0;
+						tInfoOfSequential->gIsDirty = false;
+						tInfoOfSequential->gWriteBufferLength = 0;
+					}
+					else
+					{
+						tInfoOfSequential->gIndex = tInfoOfSequential->gIndex - tTemp;
+						//POSSIBLY DISCARDING BUFFERED READ BYTES BUT THAT IS BETTER BECAUSE THEY
+						//		MIGHT HAVE BECOME DIRTY FROM THE ABOVE.
+						tInfoOfSequential->gWriteBufferLength = tInfoOfSequential->gIndex;
+					}
+				}
+
+				if(vIsNoError && (tRemainingLength > 0))
+				{
+					if(tRemainingLength > tInfoOfSequential->gBufferCapacity)
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+								pThis->gPrivate_osFileHandle, 
+								pBytes + (pLength - tRemainingLength), 
+								tRemainingLength, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+								pThis->gPrivate_osFileHandle,
+								pBytes + (pLength - tRemainingLength), 
+								tRemainingLength, 
+								tInfoOfSequential->gOffset);
+#endif
+
+						if(vIsNoError)
+						{
+							tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+									tRemainingLength;
+						}
+					}
+					else
+					{
+						memcpy(tInfoOfSequential->gWriteBuffer, pBytes, tRemainingLength);
+						tInfoOfSequential->gIndex = tRemainingLength;
+						tInfoOfSequential->gIsDirty = true;
+						tInfoOfSequential->gWriteBufferLength = tRemainingLength;
+						
+						/*
+							WE DO NOT HAVE TO WORRY ABOUT IMMEDIATELY GROWING THE FILE WHEN IT NEEDS
+							GROWING BECAUSE NO REGIONS CAN EXIST, OTHERWISE WE WOULD NOT BE HERE.
+						*/
+					}
+				}
+
+				if(vIsNoError && (tIsGrowing || 
+						(tAnticipatedOffset > pThis->gPrivate_maximumTraversedByteSize)))
+				{
+					if(!(pThis->gPrivate_isRwLockInitialized) ||
+							(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0))
+					{
+						if(tAnticipatedOffset > pThis->gPrivate_hiddenByteSize)
+						{
+							/*
+								THE FILE MIGHT NOT YET BE THE SIZE BELOW, BUT THAT IS FINE IN THIS
+								CASE BECAUSE NO REGIONS CAN EXIST.
+							*/
+							pThis->gPrivate_hiddenByteSize = tAnticipatedOffset;
+							
+							if(pThis->gPrivate_hiddenByteSize > 
+									pThis->gPrivate_expectedByteSize)
+							{
+								pThis->gPrivate_expectedByteSize = 
+										pThis->gPrivate_hiddenByteSize;
+							}
+						}
+						
+						if(tAnticipatedOffset > pThis->gPrivate_maximumTraversedByteSize)
+							{pThis->gPrivate_maximumTraversedByteSize = tAnticipatedOffset;}
+
+						if(pThis->gPrivate_isRwLockInitialized)
+							{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+					}
+					else
+						{vIsNoError = false;}
+				}
+			}
+			else if(vIsNoError)
+			{
+				/*
+					IN THIS CASE,
+						- WE CAN DEAL WITH REGIONS OVERLAPPING THE SEGMENT
+						- WE FLUSH THE BUFFER, AND NOT USE IT AGAIN.
+						- THE DATA TO BE WRITTEN MIGHT BE SMALL ENOUGH TO FIT THE CURRENT BUFFER,
+								OR LARGE ENOUGH TO NEED ANOTHER BUFFER, OR LARHE ENOUGH TO NEED 
+								MORE.
+						- THE DATA TO BE WRITTEN COULD ENLARGE THE FILE.
+						
+					NOTE: CODE HERE WAS WRITTEN WITH OVERLAPPING REGIONS IN MIND. OVERLAPPING REGIONS
+							ARE NO LONGER ALLOWED, BUT KEEP THE ALREADY EXISTING CODE THAT MIGHT
+							BE ADDRESSING THIS CASE.
+				*/
+				Crx_C_Os_FileSystem_Io_Region * _tBuffer[8];
+				Crx_C_Array/*<Crx_C_Os_FileSystem_Io_Region *>*/ tRegions /*= ?*/;
+				uint64_t tOriginalOffset = tInfoOfSequential->gOffset + tInfoOfSequential->gIndex;
+				size_t tCurrentOffset = tOriginalOffset;
+				size_t tExclusiveEndOffset = tOriginalOffset + pLength;
+				size_t tTemp = 0;
+				int32_t tUnlockResult = 0;
+				size_t tUnlockCount = 0;
+
+				crx_c_array_construct2(&tRegions, 
+						crx_c_os_fileSystem_io_region_getTypeBluePrintForPointer(), &(_tBuffer[0]), 
+						8, 8);
+				
+				//REMEMBER: WE NEED TO HAVE Io::gPrivate_rwLock LOCKED FOR THIS FUCNITON
+				crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+						pThis, tOriginalOffset, tExclusiveEndOffset, &vIsNoError, tRegions);
+
+				if(vIsNoError)
+				{
+					if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock));
+
+						/*
+							WE MIGHT BE LOCKING MORE THAN THE REQUIRED REGION, BUT THAT IS FINE.
+							THE ALGORITHM MUST CONSIDER FAILURES LATER ON.
+						*/
+						if(tInfoOfSequential->gWriteBufferLength > 0)
+						{
+							tInfoOfSequential->gPortion__lock.gBaseOffset = 
+									tInfoOfSequential->gOffset;
+							tInfoOfSequential->gPortion__lock.gLength = 
+									tInfoOfSequential->gBufferCapacity + pLength;
+						}
+						else
+						{
+							//REMEMBER, WE WILL NOT USE THE BUFFER AT ALL IF IT IS EMPTY.
+							tInfoOfSequential->gPortion__lock.gBaseOffset = tOriginalOffset;
+							tInfoOfSequential->gPortion__lock.gLength = pLength;
+						}
+
+						if(!crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock)))
+							{vIsNoError = false;}
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+					else
+						{vIsNoError = false;}
+				}
+
+				crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+				tIsLocked = false;
+
+				if(vIsNoError && tInfoOfSequential->gIsDirty &&
+						(tInfoOfSequential->gIndex < tInfoOfSequential->gBufferCapacity))
+				{
+					tTemp = tInfoOfSequential->gBufferCapacity - tInfoOfSequential->gIndex;
+
+					if(tTemp > pLength)
+						{tTemp = pLength;}
+
+					memcpy(tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex, pBytes,
+							tTemp);
+
+					tCurrentOffset = tCurrentOffset + tTemp;
+					tInfoOfSequential->gIndex = tInfoOfSequential->gIndex + tTemp;
+				}
+
+				if(vIsNoError)
+				{
+					if(tInfoOfSequential->gIsDirty)
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+								pThis->gPrivate_osFileHandle, 
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#endif
+						if(!vIsNoError)
+							{tInfoOfSequential->gIndex = tInfoOfSequential->gIndex - tTemp;}
+					}
+					
+					if(vIsNoError)
+					{
+						tInfoOfSequential->gOffset = tCurrentOffset;
+						tInfoOfSequential->gIndex = 0;
+						tInfoOfSequential->gIsDirty = false;
+						tInfoOfSequential->gWriteBufferLength = 0;
+					}
+				}
+
+				if(vIsNoError && (tCurrentOffset < tExclusiveEndOffset))
+				{
+					CRX_FOR(size_t tI = 0, tI < crx_c_array_getLength(&tRegions), tI++)
+					{
+						Crx_C_Os_FileSystem_Io_Region * tRegion2 = 
+								*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_array_get(&tRegions, 
+								tI));
+
+						if(tCurrentOffset < tRegion2->gBaseOffset)
+						{
+							size_t tLength2 = tRegion2->gBaseOffset - tCurrentOffset;
+							
+							if(tLength2 > (tExclusiveEndOffset - tCurrentOffset))
+								{tLength2 = tExclusiveEndOffset - tCurrentOffset;}
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+							//WE EXPECT NO FAILURE
+							vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+									pThis->gPrivate_osFileHandle,
+									pBytes + (tCurrentOffset - tOriginalOffset),
+									tLength2, tCurrentOffset);	
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+							//WE EXPECT NO FAILURE
+							vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+									pThis->gPrivate_osFileHandle,
+									pBytes + (tCurrentOffset - tOriginalOffset), 
+									tLength2, tCurrentOffset);
+#endif
+
+							if(vIsNoError)
+								{tCurrentOffset = tCurrentOffset + tLength2;}
+							else
+								{tInfoOfSequential->gOffset = tCurrentOffset;}
+						}
+
+						if(vIsNoError && (tCurrentOffset < tExclusiveEndOffset) &&
+								(tCurrentOffset >= tRegion2->gBaseOffset) &&
+								(tCurrentOffset < (tRegion2->gBaseOffset + tRegion2->gLength)))
+						{
+							unsigned char * tPointerIntoRegion = tRegion2->gBaseAddress + 
+									(tCurrentOffset - tRegion2->gBaseOffset);
+							size_t tLength2 = (tRegion2->gBaseOffset + tRegion2->gLength) - 
+									tCurrentOffset;
+
+							if(tCurrentOffset + tLength2 > tExclusiveEndOffset)
+								{tLength2 = tExclusiveEndOffset - tCurrentOffset;}
+
+							memcpy(tPointerIntoRegion, pBytes + (tCurrentOffset - tOriginalOffset),
+									tLength2);
+							tCurrentOffset = tCurrentOffset + tLength2;
+						}
+
+						if(!vIsNoError || (tCurrentOffset >= tExclusiveEndOffset))
+							{break;}
+					}
+					CRX_ENDFOR
+
+					if(vIsNoError && (tCurrentOffset < tExclusiveEndOffset))
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+								pThis->gPrivate_osFileHandle,
+								pBytes + (tCurrentOffset - tOriginalOffset),
+								tExclusiveEndOffset - tCurrentOffset, 
+								tCurrentOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+								pThis->gPrivate_osFileHandle,
+								pBytes + (tCurrentOffset - tOriginalOffset), 
+								tExclusiveEndOffset - tCurrentOffset, 
+								tCurrentOffset);
+#endif
+
+						if(vIsNoError)
+							{tCurrentOffset = tExclusiveEndOffset;}
+						else
+							{tInfoOfSequential->gOffset = tCurrentOffset;}
+					}
+					
+					if(vIsNoError)
+						{tInfoOfSequential->gOffset = tCurrentOffset;}
+				}
+
+				if(vIsNoError && tIsGrowing)
+				{
+					if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0))
+					{
+						if(tAnticipatedOffset > pThis->gPrivate_maximumTraversedByteSize)
+						{
+							pThis->gPrivate_maximumTraversedByteSize = tAnticipatedOffset;
+
+							if(pThis->gPrivate_maximumTraversedByteSize > 
+									pThis->gPrivate_expectedByteSize)
+							{
+								pThis->gPrivate_expectedByteSize = 
+										pThis->gPrivate_maximumTraversedByteSize;
+							}
+						}
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					}
+					else
+						{vIsNoError = false;}
+				}
+
+				if(crx_c_os_fileSystem_io_private_patientlyLockForReadRwLock(pThis, 
+						&(pThis->gPrivate_rwLock)) == 0)
+				{
+					tIsLocked = true;
+					
+					CRX_FOR(size_t tI = 0, tI < crx_c_array_getLength(&tRegions), tI++)
+					{
+						Crx_C_Os_FileSystem_Io_Region * tRegion2 = 
+								*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_array_get(&tRegions, 
+								tI));
+
+						if(crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(pThis,
+								&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+						{//TRYING TO AVOID THE USE OF ATOMICS FOR THE TIME BEING
+							tRegion2->gNumberOfHeldPointers = tRegion2->gNumberOfHeldPointers - 1;
+							crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+						}
+					}
+					CRX_ENDFOR
+
+					if(crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(pThis,
+							&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock));
+
+						if(tInfoOfSequential->gWriteBufferLength > 0) //WE FAILED BEFORE FLUSH
+						{
+							tInfoOfSequential->gPortion__lock.gBaseOffset = 
+									tInfoOfSequential->gOffset;
+							tInfoOfSequential->gPortion__lock.gLength = 
+									tInfoOfSequential->gBufferCapacity;
+
+							crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked), 
+									&(tInfoOfSequential->gPortion__lock));
+						}
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+				}
+				
+				crx_c_array_destruct(&tRegions);
+			}
+			
+			if(!tIsLocked && pThis->gPrivate_isRwLockInitialized)
+			{
+				tIsLocked = (crx_c_os_fileSystem_io_private_patientlyLockForReadRwLock(pThis, 
+						&(pThis->gPrivate_rwLock)) == 0);
+			}
+			
+			if(tIsLocked)
+			{
+				if(crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(pThis,
+						&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+				{
+					//TRYING TO AVOID THE USE OF ATOMICS FOR THE TIME BEING
+					pThis->gPrivate_numberOfActiveSequentialRequests = 
+							pThis->gPrivate_numberOfActiveSequentialRequests - 1;
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+				}
+			}
+		}
+		else if(vIsNoError && 
+				(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+			Crx_C_Os_FileSystem_Io_Region * _tBuffer[8];
+			Crx_C_Array/*<Crx_C_Os_FileSystem_Io_Region *>*/ tRegions /*= ?*/;
+			uint64_t tOriginalOffset = tInfoOfSequential->gOffset + tInfoOfSequential->gIndex;
+			size_t tCurrentOffset = tOriginalOffset;
+			size_t tExclusiveEndOffset = tOriginalOffset + pLength;
+			size_t tTemp = 0;
+			int32_t tUnlockResult = 0;
+			size_t tUnlockCount = 0;
+
+			crx_c_array_construct2(&tRegions, 
+					crx_c_os_fileSystem_io_region_getTypeBluePrintForPointer(), &(_tBuffer[0]), 
+					8, 8);
+			
+			//REMEMBER: WE NEED TO HAVE Io::gPrivate_rwLock LOCKED FOR THIS FUCNITON
+			crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+					pThis, tOriginalOffset, tExclusiveEndOffset, &vIsNoError, tRegions);
+
+			if(tIsLocked)//MEANING pThis->gPrivate_isRwLockInitialized
+			{
+				crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+				tIsLocked = false;
+			}
+
+			crx_c_os_fileSystem_io_getPointerToRegion
+		}
+	}
+	
+	return vIsNoError;
+	CRX_SCOPE_END
+}
+CRX__LIB__PUBLIC_C_FUNCTION() int64_t crx_c_os_fileSystem_io_read(
+		Crx_C_Os_FileSystem_Io * pThis, uint32_t pSequentialAccessorId,
+		void * CRX_NOT_NULL pBytes, uint64_t pLength)
+{
+	CRX_SCOPE_META
+	if(pThis->gPrivate_fileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY)
+		{return 0;}
+
+	CRX_SCOPE
+	bool vIsNoError = true;
+	int64_t vReturn = -1;
+
+	crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForSequentialAccess(pThis);
+
+	if(!(pThis->gPrivate_isRwLockInitialized) ||
+			(crx_c_pthread_rwlock_rdlock(&(pThis->gPrivate_rwLock)) == 0))
+	{
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * tInfoOfSequential = NULL
+		bool tIsLocked = pThis->gPrivate_isRwLockInitialized;
+
+		if(crx_c_hashTable_hasKey(&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId))
+		{
+			tInfoOfSequential = ((Crx_C_Os_FileSystem_Io_InfoOfSequential *)crx_c_hashTable_get(
+					&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId));
+
+			if(!tInfoOfSequential->gIsInUse)
+				{tInfoOfSequential->gIsInUse = true;}
+			else
+				{vIsNoError = false;}
+		}
+		else
+			{vIsNoError = false;}
+
+		if(vIsNoError && 
+				(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+			bool tIsToOnlyBuffer = false;
+			bool tIsToExtendToASecondBufferAndOnly = false;
+			bool tIsToAddressRegions = false;
+			uint64_t tOriginalOffset = 0;
+			uint64_t tLength = 0;
+			uint64_t tRemainingLength = 0;
+
+			if(pThis->gPrivate_isRwLockInitialized)
+			{
+				//AVOIDING ATOMICS FOR THE TIME BEING
+				if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+				{
+					pThis->gPrivate_numberOfActiveSequentialRequests = 
+							pThis->gPrivate_numberOfActiveSequentialRequests + 1;
+
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+				}
+				else
+					{vIsNoError = false;}
+			}
+
+			if(vIsNoError)
+			{
+				tOriginalOffset = tInfoOfSequential->gOffset + tInfoOfSequential->gIndex;
+
+				if((tOriginalOffset + pLength) > pThis->gPrivate_maximumTraversedByteSize)
+				{
+					utin64_t tDifference = ((tInfoOfSequential->gOffset + 
+							tInfoOfSequential->gIndex + pLength) - 
+							pThis->gPrivate_maximumTraversedByteSize);
+
+					if(pLength >= tDifference)
+						{tLength = pLength - tDifference;}
+					else
+						{tLength = 0;}
+
+					tRemainingLength = tLength;
+				}
+
+				tIsToExtendToASecondBufferAndOnly = ((tLength >
+						(tInfoOfSequential->gWriteBufferLength - tInfoOfSequential->gIndex))  &&
+						((tLength - (tInfoOfSequential->gWriteBufferLength - 
+						tInfoOfSequential->gIndex)) <= tInfoOfSequential->gBufferCapacity)) &&
+						(tInfoOfSequential->gWriteBufferLength != 0);
+				tIsToOnlyBuffer = ((tLength <= (tInfoOfSequential->gWriteBufferLength - 
+						tInfoOfSequential->gIndex)) || tIsToExtendToASecondBufferAndOnly);
+			}
+			
+			if(vIsNoError && pThis->gPrivate_isRwLockInitialized &&
+					!(tInfoOfSequential->gIsToIgnoreRegions) && 
+					(pThis->gPrivate_fileAccessMode != 
+					CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY))
+				{tIsToAddressRegions = true;}
+
+			if(vIsNoError && tIsToOnlyBuffer && tIsToAddressRegions)
+			{
+				/*IF THE BUFFER IS TO BE USED, AND IS CURRENTLY EMPTY, A REGION LOCK HAS NOT BEEN
+						SET YET, OR IF IT IS NOT EMPTY BUT IT DOES NOT HAVE ENOUGH REMAINING BITS 
+						BUT READING AN ENTIRE NEW BUFFER CAN FULLFILL THE REQUEST, A REGION LOCK 
+						SPANNING THE NEW BUFFER SEGMENT IS NOT SET YET. WE MUST ENSURE THAT NO 
+						CURRENT REGIONS OVERLAP THE UNSET BUFFER, OTHERIWSE WE CAN NOT USE IT. FOR 
+						THE BUFFER, NOT ONLY WE WANT TO FORBID REGIONS THAT ARE OVERLAPPING ITS 
+						SEGMENT TO BE CREATED OR DELETED, WHICH IS WHAT A REGION LOCK IS FOR, BUT WE 
+						ALSO WANT NO REGIONS AT ALL OVERLAPING ITS SEGMENT.
+				*/		
+				if((tInfoOfSequential->gWriteBufferLength == 0) ||
+						tIsToExtendToASecondBufferAndOnly)
+				{
+					size_t tStartOffset = tInfoOfSequential->gOffset + 
+							tInfoOfSequential->gWriteBufferLength;
+					size_t tExclusiveEndOffset = tStartOffset + 
+							tInfoOfSequential->gBufferCapacity;
+
+					//REMEMBER: WE NEED TO HAVE Io::gPrivate_rwLock LOCKED FOR THIS FUCNITON
+					tIsToOnlyBuffer = 
+							!crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+							pThis, tStartOffset, tExclusiveEndOffset, &vIsNoError, NULL);
+				}
+			}
+
+			if(vIsNoError && tIsToOnlyBuffer)
+			{
+				if(tIsToAddressRegions && ((tInfoOfSequential->gWriteBufferLength == 0) ||
+						tIsToExtendToASecondBufferAndOnly))
+				{
+					/*
+						BECAUSE WE WANT TO UNLOCK AS SOON AS POSSIBLE, WE END UP REGION LOCKING
+						THE CURRENT BUFFER SPAN WHICH IS YET TO BE FLUSHED IF NECESSARY OR READ, 
+						AND THE NEXT BUFFER SPAN WHICH IS TO FILLED WITH NEW DATA.
+					*/
+					if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked),
+								&(tInfoOfSequential->gPortion__lock));
+
+						tInfoOfSequential->gPortion__lock.gBaseOffset = tInfoOfSequential->gOffset;
+						tInfoOfSequential->gPortion__lock.gLength = 
+								tInfoOfSequential->gWriteBufferLength + 
+								tInfoOfSequential->gBufferCapacity;
+						
+						if(!crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock)))
+							{vIsNoError = false;}
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+					else
+						{vIsNoError = false;}
+				}
+
+				if(tIsLocked) //MEANING pThis->gPrivate_isRwLockInitialized
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				if(vIsNoError && tIsToExtendToASecondBufferAndOnly)
+				{
+					if(tInfoOfSequential->gIndex < tInfoOfSequential->gWriteBufferLength)
+					{
+						memcpy(pBytes, tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex,
+								tInfoOfSequential->gWriteBufferLength - tInfoOfSequential->gIndex);
+						tRemainingLength = tRemainingLength - 
+								(tInfoOfSequential->gWriteBufferLength - tInfoOfSequential->gIndex);
+					}
+
+					if(tInfoOfSequential->gIsDirty)
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+								pThis->gPrivate_osFileHandle, 
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#endif
+					}
+					
+					if(vIsNoError)
+					{
+						tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+								tInfoOfSequential->gWriteBufferLength;
+						tInfoOfSequential->gIndex = 0;
+						tInfoOfSequential->gIsDirty = false;
+						tInfoOfSequential->gWriteBufferLength = 0;
+					}
+					
+					if(vIsNoError)
+					{
+						int64_t tNumberOfBytesRead = 0;
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						tNumberOfBytesRead = crx_c_os_fileSystem_internal_posix_doPread(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer,
+								tInfoOfSequential->gBufferCapacity, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						tNumberOfBytesRead = crx_c_os_fileSystem_private_win32_doReadFile(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer,
+								tInfoOfSequential->gBufferCapacity, 
+								tInfoOfSequential->gOffset);
+#endif
+
+						if(tNumberOfBytesRead >= 0)
+							{tInfoOfSequential->gWriteBufferLength = tNumberOfBytesRead;}
+						else
+							{vIsNoError = false;}
+					}
+				}
+
+				if(vIsNoError && (tRemainingLength > 0))
+				{
+					size_t tNumberOfByteToRead = tRemainingLength;
+
+					if(tRemainingLength > (tInfoOfSequential->gWriteBufferLength - 
+							tInfoOfSequential->gIndex))
+					{
+						tNumberOfByteToRead = (tInfoOfSequential->gWriteBufferLength - 
+								tInfoOfSequential->gIndex);
+					}
+
+					if(tNumberOfByteToRead > 0)
+					{
+						memcpy(pBytes, tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex,
+								tNumberOfByteToRead);
+						tInfoOfSequential->gIndex = tInfoOfSequential->gIndex + tNumberOfByteToRead;
+
+						tRemainingLength = tRemainingLength - tNumberOfByteToRead;
+					}
+				}
+			}
+			else if(vIsNoError && !tIsToAddressRegions)
+			{
+				size_t tTemp = tRemainingLength;
+
+				if(tLocked) //MEANING pThis->gPrivate_isRwLockInitialized
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+				
+				if(tRemainingLength > (tInfoOfSequential->gBufferCapacity - 
+						tInfoOfSequential->gIndex))
+					{tTemp = (tInfoOfSequential->gWriteBufferLength - tInfoOfSequential->gIndex);}
+
+				memcpy(pBytes, tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex, tTemp);
+				tRemainingLength = tRemainingLength - tTemp;
+				tInfoOfSequential->gIndex = tInfoOfSequential->gIndex + tTemp;
+
+				if(tInfoOfSequential->gIndex > tInfoOfSequential->gWriteBufferLength)
+					{tInfoOfSequential->gWriteBufferLength = tInfoOfSequential->gIndex;}
+
+				if(tInfoOfSequential->gIsDirty && (tRemainingLength > 0))
+				{
+					/*
+						NO REASON TO FLUSH PAST tInfoOfSequential->gIndex ALL THE WAY TO 
+								tInfoOfSequential->gWriteBufferLength BECAUSE THE BYTES THERE
+								COULD NOT HAVE BEEN CHANGED
+					*/
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+							pThis->gPrivate_osFileHandle, 
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gIndex, 
+							tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+							pThis->gPrivate_osFileHandle,
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gIndex, 
+							tInfoOfSequential->gOffset);
+#endif
+
+					if(vIsNoError)
+					{
+						tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+								tInfoOfSequential->gWriteBufferLength;
+						tInfoOfSequential->gIndex = 0;
+						tInfoOfSequential->gIsDirty = false;
+						tInfoOfSequential->gWriteBufferLength = 0;
+					}
+					else
+					{
+						tInfoOfSequential->gIndex = tInfoOfSequential->gIndex - tTemp;
+						//THIS MIGHT DISCARD SOME BUFFERED READ BYTES, BUT THAT IS FINE
+						tInfoOfSequential->gWriteBufferLength = tInfoOfSequential->gIndex;
+					}
+				}
+
+				if(vIsNoError && (tRemainingLength > 0))
+				{
+					if(tRemainingLength > tInfoOfSequential->gBufferCapacity)
+					{
+						int64_t tNumberOfBytesRead = 0;
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						tNumberOfBytesRead = crx_c_os_fileSystem_internal_posix_doPread(
+								pThis->gPrivate_osFileHandle, 
+								pBytes + (tLength - tRemainingLength), 
+								tRemainingLength, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						tNumberOfBytesRead = crx_c_os_fileSystem_private_win32_doReadFile(
+								pThis->gPrivate_osFileHandle, 
+								pBytes + (tLength - tRemainingLength), 
+								tRemainingLength, 
+								tInfoOfSequential->gOffset);
+#endif
+
+						if(tNumberOfBytesRead >= 0)
+						{
+							tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+									tNumberOfBytesRead;
+							tRemainingLength = tRemainingLength - tNumberOfBytesRead;
+						}
+						else
+							{vIsNoError = false;}
+					}
+					else
+					{
+						int64_t tNumberOfBytesRead = 0;
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						tNumberOfBytesRead = crx_c_os_fileSystem_internal_posix_doPread(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer,
+								tInfoOfSequential->gBufferCapacity, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						tNumberOfBytesRead = crx_c_os_fileSystem_private_win32_doReadFile(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer,
+								tInfoOfSequential->gBufferCapacity, 
+								tInfoOfSequential->gOffset);
+#endif
+
+						if(tNumberOfBytesRead >= 0)
+						{
+							size_t tNumberOfBytesToRead = tRemainingLength;
+
+							tInfoOfSequential->gWriteBufferLength = tNumberOfBytesRead;
+
+							if(tRemainingLength > tNumberOfBytesRead)
+								{tNumberOfBytesToRead = tNumberOfBytesRead;}
+
+							memcpy(pBytes, tInfoOfSequential->gWriteBuffer, tNumberOfBytesToRead);
+							tInfoOfSequential->gIndex = tNumberOfBytesToRead;
+							tRemainingLength = tRemainingLength - tNumberOfBytesToRead;
+						}
+						else
+							{vIsNoError = false;}
+					}
+				}
+			}
+			else if(vIsNoError)
+			{
+				/*NOTE: CODE HERE WAS WRITTEN WITH OVERLAPPING REGIONS IN MIND. OVERLAPPING REGIONS
+							ARE NO LONGER ALLOWED, BUT KEEP THE ALREADY EXISTING CODE THAT MIGHT
+							BE ADDRESSING THIS CASE.*/
+				Crx_C_Os_FileSystem_Io_Region * _tBuffer[8];
+				Crx_C_Array/*<Crx_C_Os_FileSystem_Io_Region *>*/ tRegions /*= ?*/;
+				size_t tCurrentOffset = tOriginalOffset;
+				size_t tExclusiveEndOffset = tOriginalOffset + tLength;
+				int32_t tUnlockResult = 0;
+				size_t tUnlockCount = 0;
+
+				crx_c_array_construct2(&tRegions, 
+						crx_c_os_fileSystem_io_region_getTypeBluePrintForPointer(), &(_tBuffer[0]), 
+						8, 8);
+
+				//REMEMBER: WE NEED TO HAVE Io::gPrivate_rwLock LOCKED FOR THIS FUCNITON
+				crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+						pThis, tOriginalOffset, tOriginalOffset + tLength, 
+						&vIsNoError, Crx_C_Array/*<Crx_C_Os_FileSystem_Io_Region *>*/ tRegions);
+
+				if(vIsNoError)
+				{
+					if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock));
+
+						/*
+							WE MIGHT BE LOCKING MORE THAN THE REQUIRED REGION, BUT THAT IS FINE.
+							THE ALGORITHM MUST CONSIDER FAILURES LATER ON.
+						*/
+						if(tInfoOfSequential->gWriteBufferLength > 0)
+						{
+							tInfoOfSequential->gPortion__lock.gBaseOffset = 
+									tInfoOfSequential->gOffset;
+							tInfoOfSequential->gPortion__lock.gLength = 
+									tInfoOfSequential->gBufferCapacity + tLength;
+						}
+						else
+						{
+							//IN A READ, IF THE BUFFER IS EMPTY, IT WILL REMAIN EMPTY.
+							tInfoOfSequential->gPortion__lock.gBaseOffset = tOriginalOffset;
+							tInfoOfSequential->gPortion__lock.gLength = tLength;
+						}
+						
+						if(!crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock)))
+							{vIsNoError = false;}
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+					else
+						{vIsNoError = false;}
+				}
+
+				crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+				tIsLocked = false;
+
+				if(vIsNoError && 
+						(tInfoOfSequential->gIndex < tInfoOfSequential->gWriteBufferLength))
+				{
+					size_t tLength2 = tInfoOfSequential->gWriteBufferLength - 
+							tInfoOfSequential->gIndex;
+
+					if(tLength2 > tLength)
+						{tLength2 = tLength;}
+
+					memcpy(pBytes, tInfoOfSequential->gWriteBuffer + tInfoOfSequential->gIndex,
+							tLength2);
+
+					tCurrentOffset = tCurrentOffset + tLength2;
+				}
+
+				if(vIsNoError)
+				{
+					if(tInfoOfSequential->gIsDirty/* && (tInfoOfSequential->gIndex > 0)*/)
+					{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+								pThis->gPrivate_osFileHandle, 
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+								pThis->gPrivate_osFileHandle,
+								tInfoOfSequential->gWriteBuffer, 
+								tInfoOfSequential->gIndex, 
+								tInfoOfSequential->gOffset);
+#endif
+					}
+					
+					if(vIsNoError)
+					{
+						tInfoOfSequential->gOffset = tCurrentOffset;
+						tInfoOfSequential->gIndex = 0;
+						tInfoOfSequential->gIsDirty = false;
+						tInfoOfSequential->gWriteBufferLength = 0;
+					}
+				}
+
+				if(vIsNoError && (tCurrentOffset < tExclusiveEndOffset))
+				{
+					CRX_FOR(size_t tI = 0, tI < crx_c_array_getLength(&tRegions), tI++)
+					{
+						Crx_C_Os_FileSystem_Io_Region * tRegion2 = 
+								*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_array_get(&tRegions, 
+								tI));
+
+						if(tCurrentOffset < tRegion2->gBaseOffset)
+						{
+							size_t tLength2 = tRegion2->gBaseOffset - tCurrentOffset;
+							
+							if(tLength2 > (tExclusiveEndOffset - tCurrentOffset))
+								{tLength2 = tExclusiveEndOffset - tCurrentOffset;}
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+							//WE EXPECT NO FAILURE AND tLength2 BYTES TO BE READ
+							if(crx_c_os_fileSystem_internal_posix_doPread(
+									pThis->gPrivate_osFileHandle, 
+									pBytes + (tCurrentOffset - tOriginalOffset), 
+									tLength2, tCurrentOffset) < 0)
+								{vIsNoError = false;}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+							//WE EXPECT NO FAILURE AND tLength2 BYTES TO BE READ
+							if(crx_c_os_fileSystem_private_win32_doReadFile(
+									pThis->gPrivate_osFileHandle,
+									pBytes + (tCurrentOffset - tOriginalOffset), 
+									tLength2, tCurrentOffset) < 0)
+								{vIsNoError = false;}
+#endif
+
+							if(vIsNoError)
+								{tCurrentOffset = tCurrentOffset + tLength2;}
+						}
+
+						if(vIsNoError && (tCurrentOffset < tExclusiveEndOffset) &&
+								(tCurrentOffset >= tRegion2->gBaseOffset) &&
+								(tCurrentOffset < (tRegion2->gBaseOffset + tRegion2->gLength)))
+						{
+							unsigned char * tPointerIntoRegion = tRegion2->gBaseAddress + 
+									(tCurrentOffset - tRegion2->gBaseOffset);
+							size_t tLength2 = (tRegion2->gBaseOffset + tRegion2->gLength) - 
+									tCurrentOffset;
+
+							if(tCurrentOffset + tLength2 > tExclusiveEndOffset)
+								{tLength2 = tExclusiveEndOffset - tCurrentOffset;}
+
+							memcpy(pBytes + (tCurrentOffset - tOriginalOffset), tPointerIntoRegion,
+									tLength2);
+							tCurrentOffset = tCurrentOffset + tLength2;
+						}
+
+						if(!vIsNoError || (tCurrentOffset >= tExclusiveEndOffset))
+							{break;}
+					}
+					CRX_ENDFOR
+
+					if(vIsNoError && (tCurrentOffset < tExclusiveEndOffset))
+					{
+						int64_t tNumberOfBytesRead = 0;
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						tNumberOfBytesRead = crx_c_os_fileSystem_internal_posix_doPread(
+								pThis->gPrivate_osFileHandle,
+								pBytes + (tCurrentOffset - tOriginalOffset), 
+								tExclusiveEndOffset - tCurrentOffset, 
+								tCurrentOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						tNumberOfBytesRead = crx_c_os_fileSystem_private_win32_doReadFile(
+								pThis->gPrivate_osFileHandle,
+								pBytes + (tCurrentOffset - tOriginalOffset),
+								tExclusiveEndOffset - tCurrentOffset,
+								tCurrentOffset);
+#endif
+
+						if(tNumberOfBytesRead >= 0)
+							{tCurrentOffset = tCurrentOffset + tNumberOfBytesRead;}
+						else
+							{vIsNoError = false;}
+					}
+
+					if(vIsNoError)
+						{tInfoOfSequential->gOffset = tCurrentOffset;}
+				}
+				
+				if(vIsNoError)
+					{tRemainingLength = tExclusiveEndOffset - tCurrentOffset;}
+
+				if(crx_c_os_fileSystem_io_private_patientlyLockForReadRwLock(pThis, 
+						&(pThis->gPrivate_rwLock)) == 0)
+				{
+					tIsLocked = true;
+
+					CRX_FOR(size_t tI = 0, tI < crx_c_array_getLength(&tRegions), tI++)
+					{
+						Crx_C_Os_FileSystem_Io_Region * tRegion2 = 
+								*((Crx_C_Os_FileSystem_Io_Region * *)crx_c_array_get(&tRegions, 
+								tI));
+
+						if(crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(pThis,
+								&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+						{//TRYING TO AVOID THE USE OF ATOMICS FOR THE TIME BEING
+							tRegion2->gNumberOfHeldPointers = tRegion2->gNumberOfHeldPointers - 1;
+							crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+						}
+					}
+					CRX_ENDFOR
+
+					if(crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(pThis,
+							&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked), 
+								&(tInfoOfSequential->gPortion__lock));
+
+						if(tInfoOfSequential->gWriteBufferLength > 0) //WE FAILED BEFORE FLUSH
+						{
+							tInfoOfSequential->gPortion__lock.gBaseOffset = 
+									tInfoOfSequential->gOffset;
+							tInfoOfSequential->gPortion__lock.gLength = 
+									tInfoOfSequential->gBufferCapacity;
+
+							crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked), 
+									&(tInfoOfSequential->gPortion__lock));
+						}
+								
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+				}
+				
+				crx_c_array_destruct(&tRegions);
+			}
+			
+			if(!tIsLocked && pThis->gPrivate_isRwLockInitialized)
+			{
+				tIsLocked = (crx_c_os_fileSystem_io_private_patientlyLockForReadRwLock(pThis, 
+						&(pThis->gPrivate_rwLock)) == 0);
+			}
+			
+			if(tIsLocked)
+			{
+				if(crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(pThis,
+						&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+				{
+					//TRYING TO AVOID THE USE OF ATOMICS FOR THE TIME BEING
+					pThis->gPrivate_numberOfActiveSequentialRequests = 
+							pThis->gPrivate_numberOfActiveSequentialRequests - 1;
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+				}
+			}
+	
+			if(vIsNoError)
+				{vReturn = tLength - tRemainingLength;}
+		}
+		else if(vIsNoError && 
+				(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+		}
+	}
+	
+	return vReturn;
+	CRX_SCOPE_END
+}
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_seek(
+		Crx_C_Os_FileSystem_Io * pThis, uint32_t pSequentialAccessorId,
+		size_t pOffset)
+{
+	if(!(pThis->gPrivate_isRwLockInitialized) ||
+			(crx_c_pthread_rwlock_rdlock(&(pThis->gPrivate_rwLock)) == 0))
+	{
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * tInfoOfSequential = NULL
+
+		if(crx_c_hashTable_hasKey(&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId))
+		{
+			tInfoOfSequential = ((Crx_C_Os_FileSystem_Io_InfoOfSequential *)crx_c_hashTable_get(
+					&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId));
+
+			if(!tInfoOfSequential->gIsInUse)
+				{tInfoOfSequential->gIsInUse = true;}
+			else
+				{vReturn = false;}
+		}
+		else
+			{vReturn = false;}
+
+		if(vReturn && 
+				(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+			bool tIsToAddressRegions = false;
+			size_t tCurrentSize = pThis->gPrivate_maximumTraversedByteSize;
+
+			if(pThis->gPrivate_isRwLockInitialized)
+			{
+				//AVOIDING ATOMICS FOR THE TIME BEING
+				if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+				{
+					pThis->gPrivate_numberOfActiveSequentialRequests = 
+							pThis->gPrivate_numberOfActiveSequentialRequests + 1;
+
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+				}
+				else
+					{vReturn = false;}
+			}
+
+			if(pThis->gPrivate_isRwLockInitialized)
+				{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+
+			if(vReturn)
+			{
+				size_t tLength = pLength;
+
+				if(tInfoOfSequential->gIsDirty)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					vReturn = crx_c_os_fileSystem_internal_posix_doPwrite(
+							pThis->gPrivate_osFileHandle, 
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gIndex, 
+							tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					vReturn = crx_c_os_fileSystem_private_win32_doWriteFile(
+							pThis->gPrivate_osFileHandle,
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gIndex, 
+							tInfoOfSequential->gOffset);
+#endif
+				}
+
+				if(vReturn)
+				{
+					tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+							tInfoOfSequential->gIndex;
+					tInfoOfSequential->gIndex = 0;
+					tInfoOfSequential->gIsDirty = false;
+					tInfoOfSequential->gWriteBufferLength = 0;
+
+					if(pThis->gPrivate_isRwLockInitialized)
+						{vReturn = (crx_c_pthread_rwlock_rdlock(&(pThis->gPrivate_rwLock)) != 0);}
+				}
+			}
+			
+			if(vReturn) 
+			{
+				if(pOffset < pThis->gPrivate_maximumTraversedByteSize)
+					{tInfoOfSequential->gOffset = pOffset;}
+				else
+				{
+					if((crx_c_tree_getSize(&(pThis->gPrivate_regionsByOffset)) == 0) ||
+							(pThis->gPrivate_numberOfActiveRegionCreations == 0))
+					{
+						if(pThis->gPrivate_isRwLockInitialized)
+							{crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));}
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+						vReturn = crx_c_os_fileSystem_internal_posix_resizeFile(
+								pThis->gPrivate_osFileHandle, true, pOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						vReturn = crx_c_os_fileSystem_internal_win32_resizeFile(
+								pThis->gPrivate_osFileHandle, true, pOffset);
+#endif
+
+						if(vReturn)
+						{
+							pThis->gPrivate_maximumTraversedByteSize = pOffset;
+							
+							if(pThis->gPrivate_maximumTraversedByteSize > 
+									pThis->gPrivate_expectedByteSize)
+							{
+								pThis->gPrivate_maximumTraversedByteSize = 
+										pThis->gPrivate_expectedByteSize;
+							}
+						}
+					}
+					else
+						{vReturn = false;}
+					
+					if(vReturn && (!(pThis->gPrivate_isRwLockInitialized) ||
+							(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0)))
+					{
+						pThis->gPrivate_maximumTraversedByteSize = tNewSize;
+						pThis->gPrivate_expectedByteSize = tNewSize;
+					}
+				}
+			}
+
+			if(pThis->gPrivate_isRwLockInitialized)
+			{
+				if(crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(pThis,
+						&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+				{
+					//TRYING TO AVOID THE USE OF ATOMICS FOR THE TIME BEING
+					pThis->gPrivate_numberOfActiveSequentialRequests = 
+							pThis->gPrivate_numberOfActiveSequentialRequests - 1;
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+				}
+			}
+		}
+		else if(vReturn && 
+				(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+			
+		}
+	}
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() unsigned char * crx_c_os_fileSystem_io_getPointerToRegion(
+		Crx_C_Os_FileSystem_Io * pThis, uint64_t pStartOffset, uint64_t pLength)
+{
+	CRX_SCOPE_META
+	if((pLength > CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE) || 
+			(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE > CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE) ||
+			(pThis->gPrivate_fileAccessMode == 
+			CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY) ||
+			(pStartOffset > INT64_MAX))
+		{return NULL;}
+
+	CRX_SCOPE
+	uint64_t vStartOffset = pStartOffset & (~(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE - 1));
+	uint32_t vLength = ((uint32_t)((((uint64_t)pLength) + pThis->gPRIVATE__REGION_ALIGNMENT_VALUE - 
+			1) & (~(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE - 1))));
+	bool vIsNoError = true;
+	unsigned char * vReturn = NULL;
+
+	crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForRegionalAccess(pThis);
+
+	if(!(pThis->gPrivate_isRwLockInitialized) && !crx_c_pthread_crx_isSameThreadAs(
+			&(pThis->gPrivate_rawId)))
+		{vIsNoError = false;}
+
+	if(vIsNoError && (!(pThis->gPrivate_isRwLockInitialized) ||
+			(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0)))
+	{
+		bool tIsLocked = pThis->gPrivate_isRwLockInitialized;
+
+		if(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{
+			Crx_C_Os_FileSystem_Io_Region * tRegion = 
+					crx_c_os_fileSystem_io_private_unsafeGetTheRegionThatFullyEncapsulatesTheSpan(
+					pThis, vStartOffset, vStartOffset + vLength);
+
+			if(tRegion != NULL)
+			{
+				//STRICTLY, Io::gPrivate_rwLock__lockedPortions IS NOT REQUIRED HERE BECAUSE WE HAVE
+				//		A WRITE LOCK ON Io::gPrivate_rwLock, BUT THE SCHEMA REQUIRES IT, HOWEVER 
+				//		IGNORING SCHEMA FOR NOW.
+				tRegion->gNumberOfHeldPointers = tRegion->gNumberOfHeldPointers + 1;
+
+				vReturn = tRegion->gBaseAddress + (vStartOffset - tRegion->gBaseOffset);
+
+				if(tIsLocked)
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+			}
+		}
+		else
+			{vIsNoError = false;}
+		
+		if(vIsNoError && (vReturn == NULL))
+		{
+			if(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE > 
+					CRX__C__OS__FILE_SYSTEM__IO__MAXIMUM_MEMORY_PAGE_SIZE_TO_CORRECT_BUFFER_WITH)
+			{
+				if(crx_c_hashTable_getSize(&(pThis->gPrivate_infoOfSequentials)) > 1)
+					{vIsNoError = false;}
+			}
+		}
+
+		if(vIsNoError && (vReturn == NULL))
+		{
+			bool tIsGrowing = false;
+			bool tWasGrown = false;
+			Crx_C_Os_FileSystem_Io_Region * tRegion = NULL;
+
+			if(pThis->gPrivate_numberOfActiveSequentialRequests != 0)
+				{vIsNoError = false;}
+			if(vIsNoError && crx_c_os_fileSystem_io_private_unsafeGetIsExtentLocked(pThis, 
+					vStartOffset, vStartOffset + vLength, &vIsNoError))
+				{vIsNoError = false;}
+			if(vIsNoError &&
+					!crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+					pThis, vStartOffset, vStartOffset + vLength, &vIsNoError, NULL))
+				{vIsNoError = false;}
+			if(vIsNoError && (pThis->gPrivate_expectedByteSize > pThis->gPrivate_hiddenByteSize))
+			{
+				tIsGrowing = true;
+
+				if((vStartOffset + vLength) > pThis->gPrivate_expectedByteSize)
+					{vIsNoError = false;}
+				else if(pThis->gPrivate_numberOfActiveRegionCreations != 0)
+				{
+					tIsGrowing = false;
+					
+					/* WE HAVE TO WAIT FOR THE ACTIVE REGION CREATION THAT IS EXPECTED TO BE 
+							CURRENTLY GROWING THE FILE, AND BECAUSE ON WINDOWS WE HAVE TO KNOW
+							THE SIZE OF THE FILE WE WANT BEFORE HAND, WE CAN STILL CAN NOT BYPASS
+							THE WAIT EVEN IF (vStartOffset + vLength) IS SMALLER THAN
+							pThis->gPrivate_hiddenByteSize.
+					*/
+					vIsNoError = false;
+				}
+			}
+			if(vIsNoError && !tIsGrowing && (pThis->gPrivate_numberOfActiveRegionCreations == 0))
+			{
+				/*
+					THE FIRST THREAD TO CREATE A REGION IS RESPONSIBLE FOR RESIZING THE FILE IF 
+							NECESSARY, AND CREATING SECONDARY HANDLES RELATED TO MAPPING FILES.
+							IN THIS CASE, WE ARE THE FIRST THREAD CREATING A REGION, AND WE ARE
+							NOT REQUIRED TO GROW THE FILE BEYOND ITS CURRENT 'HIDDEN', MEANING
+							ACTUAL, SIZE ON DISK.
+				*/
+#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+				pThis->gPrivate_mappingHandle = 
+						crx_c_os_fileSystem_private_win32_doCreateFileMapping(
+						&(pThis->gPrivate_osFileHandle__2), ((pThis->gPrivate_fileAccessMode == 
+						CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? PAGE_READONLY :
+						PAGE_READWRITE), pThis->gPrivate_hiddenByteSize, true);
+
+				if(pThis->gPrivate_mappingHandle == NULL)
+					{vIsNoError = false;}
+#endif
+			}
+
+			if(vIsNoError && pThis->gPrivate_isRwLockInitialized)
+			{
+				/*
+					WE CAN NOT ADD THE Region INSTANCE TO THE Io INSTANCE, UNTIL THE UNDERLYING 
+							MAPPING IS DONE, BECAUSE OTHERWISE, SEQUENTIAL ACCESSORS OF THE Io 
+							INSTANCE MIGHT ACCESS IT. THE FOLLOWING HELPS UNLOCK Io::gPrivate_rwLock 
+							QUICKLY WITHOUT HAVING TO CREATE A Region INSTANCE FIRST, WHILE STILL 
+							SIGNALLING THAT REGIONS EXISTS EVEN THOUGH NOT ADDED TO THE Io INSTANCE 
+							YET.
+				*/
+				pThis->gPrivate_numberOfActiveRegionCreations = 
+						pThis->gPrivate_numberOfActiveRegionCreations + 1;
+			}
+
+			if(vIsNoError)
+			{
+				tRegion = crx_c_os_fileSystem_io_region_new();
+
+				//STRICTLY, Io::gPrivate_rwLock__lockedPortions IS NOT REQUIRED HERE BECAUSE WE HAVE
+				//		A WRITE LOCK ON Io::gPrivate_rwLock, BUT STICKING TO SCHEMA
+				if(tRegion != NULL)
+				{
+					if(pThis->gPrivate_isRwLockInitialized)
+					{
+						if(crx_c_pthread_rwlock_wrlock(
+								&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+						{
+							tRegion->gBaseOffset = vStartOffset;
+							tRegion->gLength = vLength;
+							tRegion->gNumberOfHeldPointers = 1;
+							tRegion->gPortion__lock.gBaseOffset = vStartOffset;
+							tRegion->gPortion__lock.gLength = vLength;
+
+							crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked),
+									&(tRegion->gPortion__lock));
+
+							crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+						}
+						else
+						{
+							crx_c_os_fileSystem_io_region_free(tRegion);
+							tRegion = NULL;
+
+							vIsNoError = false;
+						}
+					}
+				}
+				else
+					{vIsNoError = false;}
+
+				if(tIsLocked) //MEANING pThis->gPrivate_isRwLockInitialized IS true
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				
+				if(vIsNoError && tIsGrowing)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					vIsNoError = crx_c_os_fileSystem_internal_posix_resizeFile(
+							pThis->gPrivate_osFileHandle__2, true, 
+							pThis->gPrivate_expectedByteSize);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					assert(pThis->gPrivate_mappingHandle == NULL);
+
+					vIsNoError = crx_c_os_fileSystem_internal_win32_resizeFile(
+							pThis->gPrivate_osFileHandle__2, true, 
+							pThis->gPrivate_expectedByteSize);
+#endif
+
+					if(vIsNoError)
+					{
+						tWasGrown = true;
+
+#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						pThis->gPrivate_mappingHandle = 
+								crx_c_os_fileSystem_private_win32_doCreateFileMapping(
+								&(pThis->gPrivate_osFileHandle__2), 
+								((pThis->gPrivate_fileAccessMode == 
+										CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? 
+										PAGE_READONLY : PAGE_READWRITE), 
+								pThis->gPrivate_expectedByteSize, true);
+
+						if(pThis->gPrivate_mappingHandle == NULL)
+							{vIsNoError = false;}
+#endif
+					}
+				}
+
+				if(!vIsNoError)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					/*
+						EVEN IF READ ONLY, WE EXPECT CHANGES TO THE MAPPED REGION BY OTHER PROCESSES
+						SHOULD BECOME VISIBLE, HENCE THE USE OF MAP_SHARED IN ALL CASES, CONTRARY TO THE
+						ORIGINAL DESIGN. THE APPROACH IS SIMPLY PLAYING IT SAFE IN CASE IMPLEMENTATOIN
+						DO NOT PROPOGATE CHANGES BY OTHER PROCESS IF MAP_PRIVATE IS USED BY THIS 
+						PROCESS.
+					*/
+					vReturn = crx_c_os_fileSystem_internal_posix_mmap(NULL, vLength, 
+							((pThis->gPrivate_fileAccessMode == 
+							CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? PROT_READ :
+							PROT_READ | PROT_WRITE), MAP_SHARED, pThis->gPrivate_osFileHandle__2, 
+							((int64_t)vStartOffset));
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					vReturn = crx_c_os_fileSystem_private_win32_mapViewOfFile(
+							pThis->gPrivate_mappingHandle, 
+							((pThis->gPrivate_fileAccessMode == 
+							CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? FILE_MAP_READ :
+							FILE_MAP_WRITE), vStartOffset, vLength);
+#endif
+
+					if(vReturn != NULL)
+					{
+						tRegion->gBaseAddress = vReturn;
+						vReturn = tRegion->gBaseAddress + (vStartOffset - tRegion->gBaseOffset);
+					}
+					else
+						{vIsNoError = false;}
+				}
+				else
+					{vIsNoError = false;}
+			
+				if(!(pThis->gPrivate_isRwLockInitialized))
+				{
+					if(vIsNoError && (crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(
+							&(pThis->gPrivate_rwLock)) == 0))
+						{tIsLocked = true;}
+					else
+						{vIsNoError = false;}
+				}
+
+				if(vIsNoError)
+				{
+					if(tWasGrown)
+						{pThis->gPrivate_hiddenByteSize = pThis->gPrivate_expectedByteSize;}
+					
+					if((vStartOffset + vLength) > pThis->gPrivate_maximumTraversedByteSize)
+						{pThis->gPrivate_maximumTraversedByteSize = vStartOffset + vLength;}
+
+					if(!crx_c_tree_insertElement(&(pThis->gPrivate_regionsByAddress), &tRegion))
+						{vIsNoError = false;}
+					else
+					{
+						if(!crx_c_tree_insertElement(&(pThis->gPrivate_regionsByOffset), &tRegion))
+						{
+							crx_c_tree_removeElement(&(pThis->gPrivate_regionsByAddress), &tRegion);
+							vIsNoError = false;
+						}
+					}
+				}
+				
+				if(!vIsNoError && (tRegion != NULL) && (vReturn != NULL))
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					crx_c_os_fileSystem_internal_posix_munmap(tRegion->gBaseAddress, 
+							tRegion->gLength);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					crx_c_os_fileSystem_private_win32_unmapViewOfFile(
+						tRegion->gBaseAddress);
+#endif
+
+					vReturn = NULL;
+				}
+
+				if(tRegion != NULL)
+				{
+					if(tIsLocked && (crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(
+							&(pThis->gPrivate_rwLock__lockedPortions)) == 0))
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked),
+								&(tRegion->gPortion__lock));
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+					else
+					{
+						/*
+							THIS WILL CAUSE A MEMORY LEAK, BUT THIS IS THE APPROACH CURRENTLY.
+						*/
+						tRegion = NULL;
+						vIsNoError = false;
+					}
+				}
+
+				if(tIsLocked)
+				{
+					pThis->gPrivate_numberOfActiveRegionCreations = 
+							pThis->gPrivate_numberOfActiveRegionCreations - 1;
+							
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				if(!vIsNoError)
+				{
+					if(tRegion != NULL)
+					{
+						crx_c_os_fileSystem_io_region_free(tRegion);
+						tRegion = NULL;
+					}
+				}
+			}
+		}
+	}
+	else
+		{vIsNoError = false;}
+	
+	return vReturn;
+
+	CRX_SCOPE_END
+}
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_returnPointerToRegion(
+		Crx_C_Os_FileSystem_Io * pThis, void * CRX_NOT_NULL pPointer)
+{
+	CRX_SCOPE_META
+	if(pPointer == NULL)
+		{return true;}
+
+	CRX_SCOPE
+	bool vIsNoError = true;
+
+	if(!(pThis->gPrivate_isRwLockInitialized) && !crx_c_pthread_crx_isSameThreadAs(
+			&(pThis->gPrivate_rawId)))
+		{vIsNoError = false;}
+
+	if(vIsNoError && (!(pThis->gPrivate_isRwLockInitialized) ||
+			(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock)) == 0)))
+	{
+		bool tIsLocked = pThis->gPrivate_isRwLockInitialized;
+
+		if(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{
+			Crx_C_Os_FileSystem_Io_Region * tRegion = 
+					crx_c_os_fileSystem_io_private_unsafeGetTheRegionThatContainsTheAddress(pThis, 
+					pPointer);
+
+			if(tRegion != NULL)
+			{
+				//STRICTLY, Io::gPrivate_rwLock__lockedPortions IS NOT REQUIRED HERE BECAUSE WE HAVE
+				//		A WRITE LOCK ON Io::gPrivate_rwLock, BUT THE SCHEMA REQUIRES IT, HOWEVER 
+				//		IGNORING SCHEMA FOR NOW.
+				tRegion->gNumberOfHeldPointers = tRegion->gNumberOfHeldPointers - 1;
+
+				if(tRegion->gNumberOfHeldPointers == 0)
+				{
+					crx_c_tree_removeElement(&(pThis->gPrivate_regionsByAddress), &tRegion);
+					crx_c_tree_removeElement(&(pThis->gPrivate_regionsByOffset), &tRegion);
+				}
+				else
+					{tRegion = NULL;}
+
+				if(tIsLocked)
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				if(tRegion != NULL)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					crx_c_os_fileSystem_internal_posix_munmap(tRegion->gBaseAddress, 
+							tRegion->gLength);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					crx_c_os_fileSystem_private_win32_unmapViewOfFile(
+							tRegion->gBaseAddress);
+#endif
+
+					crx_c_os_fileSystem_io_region_free(tRegion);
+					tRegion = NULL;
+				}
+			}
+		}
+	}
+	else
+		{vIsNoError = false;}
+	
+	return vIsNoError;
+	CRX_SCOPE_END
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() unsigned char * crx_c_os_fileSystem_io_private_unsafeCreateMemoryMapForSequentialAccess(
+		Crx_C_Os_FileSystem_Io * pThis, uint64_t pStartOffset, uint64_t pLength)
+{
+CRX_SCOPE_META
+	if((pLength > CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE) || 
+			(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE > CRX__OS__FILE_SYSTEM__MAXIMUM_REGION_SIZE) ||
+			(pThis->gPrivate_fileAccessMode == 
+			CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY) ||
+			(pStartOffset > INT64_MAX))
+		{return NULL;}
+
+	CRX_SCOPE
+	uint64_t vStartOffset = pStartOffset & (~(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE - 1));
+	uint32_t vLength = ((uint32_t)((((uint64_t)pLength) + pThis->gPRIVATE__REGION_ALIGNMENT_VALUE - 
+			1) & (~(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE - 1))));
+	bool vIsNoError = true;
+	unsigned char * vReturn = NULL;
+
+	if(vIsNoError)
+	{
+		if(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{
+			Crx_C_Os_FileSystem_Io_Region * tRegion = 
+					crx_c_os_fileSystem_io_private_unsafeGetTheRegionThatFullyEncapsulatesTheSpan(
+					pThis, vStartOffset, vStartOffset + vLength);
+
+			/*
+				THIS SHOULD NOT HAPPEN. THE ONE CALLING THIS FUNCTION IS THE SEQUENTIAL ACCESSOR
+				THAT NEEDS TO DO ITS ACCESS USING REGIONAL ACCESS. IF THE ERROR BELOW HAPPENS,
+				AND ASSUMING THIS LIBRARY IS CORRECT, THEN THE CLIENT CODE VIOLATED THE DISTANCE
+				REQUIREMENT BETWEEN TWO SEQUENTIAL ACCESS.
+				
+				PERHAPS THIS SOULD BE A FATAL ERROR.
+			*/
+			if(tRegion != NULL)
+			{
+				assert(false);
+				vIsNoError = false;
+			}
+		}
+		else
+			{vIsNoError = false;}
+		
+		if(vIsNoError && (vReturn == NULL))
+		{
+			if(pThis->gPRIVATE__REGION_ALIGNMENT_VALUE > 
+					CRX__C__OS__FILE_SYSTEM__IO__MAXIMUM_MEMORY_PAGE_SIZE_TO_CORRECT_BUFFER_WITH)
+			{
+				if(crx_c_hashTable_getSize(&(pThis->gPrivate_infoOfSequentials)) > 1)
+					{vIsNoError = false;}
+			}
+		}
+
+		TODO: WHAT HAPPENS IF THE USER FAVORED REGIONAL ACCESS AND THE SEQUENTIAL ACCESSER NEEDS TO
+		GROW THE FILE, AND CURRENTLY THERE ARE NO REGIONS EXISTING.
+		if(vIsNoError && (vReturn == NULL))
+		{
+			bool tIsGrowing = false;
+			bool tWasGrown = false;
+			Crx_C_Os_FileSystem_Io_Region * tRegion = NULL;
+
+			if(pThis->gPrivate_numberOfActiveSequentialRequests != 0)
+				{vIsNoError = false;}
+			if(vIsNoError && crx_c_os_fileSystem_io_private_unsafeGetIsExtentLocked(pThis, 
+					vStartOffset, vStartOffset + vLength, &vIsNoError))
+				{vIsNoError = false;}
+			if(vIsNoError &&
+					!crx_c_os_fileSystem_io_private_unsafeCheckIfRegionsInRangeAndOptionallyMarkThem(
+					pThis, vStartOffset, vStartOffset + vLength, &vIsNoError, NULL))
+				{vIsNoError = false;}
+			if(vIsNoError && (pThis->gPrivate_expectedByteSize > pThis->gPrivate_hiddenByteSize))
+			{
+				tIsGrowing = true;
+
+				if((vStartOffset + vLength) > pThis->gPrivate_expectedByteSize)
+					{vIsNoError = false;}
+				else if(pThis->gPrivate_numberOfActiveRegionCreations != 0)
+				{
+					tIsGrowing = false;
+					
+					/* WE HAVE TO WAIT FOR THE ACTIVE REGION CREATION THAT IS EXPECTED TO BE 
+							CURRENTLY GROWING THE FILE, AND BECAUSE ON WINDOWS WE HAVE TO KNOW
+							THE SIZE OF THE FILE WE WANT BEFORE HAND, WE CAN STILL CAN NOT BYPASS
+							THE WAIT EVEN IF (vStartOffset + vLength) IS SMALLER THAN
+							pThis->gPrivate_hiddenByteSize.
+					*/
+					vIsNoError = false;
+				}
+			}
+			if(vIsNoError && !tIsGrowing && (pThis->gPrivate_numberOfActiveRegionCreations == 0))
+			{
+				/*
+					THE FIRST THREAD TO CREATE A REGION IS RESPONSIBLE FOR RESIZING THE FILE IF 
+							NECESSARY, AND CREATING SECONDARY HANDLES RELATED TO MAPPING FILES.
+							IN THIS CASE, WE ARE THE FIRST THREAD CREATING A REGION, AND WE ARE
+							NOT REQUIRED TO GROW THE FILE BEYOND ITS CURRENT 'HIDDEN', MEANING
+							ACTUAL, SIZE ON DISK.
+				*/
+#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+				pThis->gPrivate_mappingHandle = 
+						crx_c_os_fileSystem_private_win32_doCreateFileMapping(
+						&(pThis->gPrivate_osFileHandle__2), ((pThis->gPrivate_fileAccessMode == 
+						CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? PAGE_READONLY :
+						PAGE_READWRITE), pThis->gPrivate_hiddenByteSize, true);
+
+				if(pThis->gPrivate_mappingHandle == NULL)
+					{vIsNoError = false;}
+#endif
+			}
+
+			if(vIsNoError && pThis->gPrivate_isRwLockInitialized)
+			{
+				/*
+					WE CAN NOT ADD THE Region INSTANCE TO THE Io INSTANCE, UNTIL THE UNDERLYING 
+							MAPPING IS DONE, BECAUSE OTHERWISE, SEQUENTIAL ACCESSORS OF THE Io 
+							INSTANCE MIGHT ACCESS IT. THE FOLLOWING HELPS UNLOCK Io::gPrivate_rwLock 
+							QUICKLY WITHOUT HAVING TO CREATE A Region INSTANCE FIRST, WHILE STILL 
+							SIGNALLING THAT REGIONS EXISTS EVEN THOUGH NOT ADDED TO THE Io INSTANCE 
+							YET.
+				*/
+				pThis->gPrivate_numberOfActiveRegionCreations = 
+						pThis->gPrivate_numberOfActiveRegionCreations + 1;
+			}
+
+			if(vIsNoError)
+			{
+				tRegion = crx_c_os_fileSystem_io_region_new();
+
+				//STRICTLY, Io::gPrivate_rwLock__lockedPortions IS NOT REQUIRED HERE BECAUSE WE HAVE
+				//		A WRITE LOCK ON Io::gPrivate_rwLock, BUT STICKING TO SCHEMA
+				if(tRegion != NULL)
+				{
+					if(pThis->gPrivate_isRwLockInitialized)
+					{
+						if(crx_c_pthread_rwlock_wrlock(
+								&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+						{
+							tRegion->gBaseOffset = vStartOffset;
+							tRegion->gLength = vLength;
+							tRegion->gNumberOfHeldPointers = 1;
+							tRegion->gPortion__lock.gBaseOffset = vStartOffset;
+							tRegion->gPortion__lock.gLength = vLength;
+
+							crx_c_tree_insertElement(&(pThis->gPrivate_portions__locked),
+									&(tRegion->gPortion__lock));
+
+							crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+						}
+						else
+						{
+							crx_c_os_fileSystem_io_region_free(tRegion);
+							tRegion = NULL;
+
+							vIsNoError = false;
+						}
+					}
+				}
+				else
+					{vIsNoError = false;}
+
+				if(tIsLocked) //MEANING pThis->gPrivate_isRwLockInitialized IS true
+				{
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				
+				if(vIsNoError && tIsGrowing)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					vIsNoError = crx_c_os_fileSystem_internal_posix_resizeFile(
+							pThis->gPrivate_osFileHandle__2, true, 
+							pThis->gPrivate_expectedByteSize);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					assert(pThis->gPrivate_mappingHandle == NULL);
+
+					vIsNoError = crx_c_os_fileSystem_internal_win32_resizeFile(
+							pThis->gPrivate_osFileHandle__2, true, 
+							pThis->gPrivate_expectedByteSize);
+#endif
+
+					if(vIsNoError)
+					{
+						tWasGrown = true;
+
+#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+						pThis->gPrivate_mappingHandle = 
+								crx_c_os_fileSystem_private_win32_doCreateFileMapping(
+								&(pThis->gPrivate_osFileHandle__2), 
+								((pThis->gPrivate_fileAccessMode == 
+										CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? 
+										PAGE_READONLY : PAGE_READWRITE), 
+								pThis->gPrivate_expectedByteSize, true);
+
+						if(pThis->gPrivate_mappingHandle == NULL)
+							{vIsNoError = false;}
+#endif
+					}
+				}
+
+				if(!vIsNoError)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					/*
+						EVEN IF READ ONLY, WE EXPECT CHANGES TO THE MAPPED REGION BY OTHER PROCESSES
+						SHOULD BECOME VISIBLE, HENCE THE USE OF MAP_SHARED IN ALL CASES, CONTRARY TO THE
+						ORIGINAL DESIGN. THE APPROACH IS SIMPLY PLAYING IT SAFE IN CASE IMPLEMENTATOIN
+						DO NOT PROPOGATE CHANGES BY OTHER PROCESS IF MAP_PRIVATE IS USED BY THIS 
+						PROCESS.
+					*/
+					vReturn = crx_c_os_fileSystem_internal_posix_mmap(NULL, vLength, 
+							((pThis->gPrivate_fileAccessMode == 
+							CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? PROT_READ :
+							PROT_READ | PROT_WRITE), MAP_SHARED, pThis->gPrivate_osFileHandle__2, 
+							((int64_t)vStartOffset));
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					vReturn = crx_c_os_fileSystem_private_win32_mapViewOfFile(
+							pThis->gPrivate_mappingHandle, 
+							((pThis->gPrivate_fileAccessMode == 
+							CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY) ? FILE_MAP_READ :
+							FILE_MAP_WRITE), vStartOffset, vLength);
+#endif
+
+					if(vReturn != NULL)
+					{
+						tRegion->gBaseAddress = vReturn;
+						vReturn = tRegion->gBaseAddress + (vStartOffset - tRegion->gBaseOffset);
+					}
+					else
+						{vIsNoError = false;}
+				}
+				else
+					{vIsNoError = false;}
+			
+				if(!(pThis->gPrivate_isRwLockInitialized))
+				{
+					if(vIsNoError && (crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(
+							&(pThis->gPrivate_rwLock)) == 0))
+						{tIsLocked = true;}
+					else
+						{vIsNoError = false;}
+				}
+
+				if(vIsNoError)
+				{
+					if(tWasGrown)
+						{pThis->gPrivate_hiddenByteSize = pThis->gPrivate_expectedByteSize;}
+					
+					if((vStartOffset + vLength) > pThis->gPrivate_maximumTraversedByteSize)
+						{pThis->gPrivate_maximumTraversedByteSize = vStartOffset + vLength;}
+
+					if(!crx_c_tree_insertElement(&(pThis->gPrivate_regionsByAddress), &tRegion))
+						{vIsNoError = false;}
+					else
+					{
+						if(!crx_c_tree_insertElement(&(pThis->gPrivate_regionsByOffset), &tRegion))
+						{
+							crx_c_tree_removeElement(&(pThis->gPrivate_regionsByAddress), &tRegion);
+							vIsNoError = false;
+						}
+					}
+				}
+				
+				if(!vIsNoError && (tRegion != NULL) && (vReturn != NULL))
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					crx_c_os_fileSystem_internal_posix_munmap(tRegion->gBaseAddress, 
+							tRegion->gLength);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					crx_c_os_fileSystem_private_win32_unmapViewOfFile(
+						tRegion->gBaseAddress);
+#endif
+
+					vReturn = NULL;
+				}
+
+				if(tRegion != NULL)
+				{
+					if(tIsLocked && (crx_c_os_fileSystem_io_private_patientlyLockForWriteRwLock(
+							&(pThis->gPrivate_rwLock__lockedPortions)) == 0))
+					{
+						crx_c_tree_removeElement(&(pThis->gPrivate_portions__locked),
+								&(tRegion->gPortion__lock));
+
+						crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+					}
+					else
+					{
+						/*
+							THIS WILL CAUSE A MEMORY LEAK, BUT THIS IS THE APPROACH CURRENTLY.
+						*/
+						tRegion = NULL;
+						vIsNoError = false;
+					}
+				}
+
+				if(tIsLocked)
+				{
+					pThis->gPrivate_numberOfActiveRegionCreations = 
+							pThis->gPrivate_numberOfActiveRegionCreations - 1;
+							
+					crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+					tIsLocked = false;
+				}
+
+				if(!vIsNoError)
+				{
+					if(tRegion != NULL)
+					{
+						crx_c_os_fileSystem_io_region_free(tRegion);
+						tRegion = NULL;
+					}
+				}
+			}
+		}
+	}
+	else
+		{vIsNoError = false;}
+	
+	return vReturn;
+
+	CRX_SCOPE_END
+}
+
+/*
+	THIS MUST EITHER BE CALLED FROM THE SAME THREAD THAT CREATED THE SEQUENTIAL ACCESSOR WHOSE
+	ID IS pSequentialAccessorId, OR CALLED WHILE HAVING A WRITE LOCK ON Io::gPrivate_rwLock
+*/
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_io_flush(
+		Crx_C_Os_FileSystem_Io * pThis, uint32_t pSequentialAccessorId)
+{
+	CRX_SCOPE_META
+	if(pThis->gPrivate_fileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY)
+		{return true;}
+	/*else if(crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForSequentialAccess(pThis) == 
+			CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{return false;}*/
+
+	CRX_SCOPE
+	bool vIsNoError = true;
+
+	crx_c_os_fileSystem_io_private_prepareAndGetFileHandleForSequentialAccess(pThis);
+
+	if(!(pThis->gPrivate_isRwLockInitialized) ||
+			(crx_c_pthread_rwlock_rdlock(&(pThis->gPrivate_rwLock)) == 0))
+	{
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * tInfoOfSequential = NULL
+
+		if(crx_c_hashTable_hasKey(&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId))
+		{
+			tInfoOfSequential = ((Crx_C_Os_FileSystem_Io_InfoOfSequential *)crx_c_hashTable_get(
+					&(pThis->gPrivate_infoOfSequentials), &pSequentialAccessorId));
+
+			if(!tInfoOfSequential->gIsInUse)
+				{tInfoOfSequential->gIsInUse = true;}
+			else
+				{vIsNoError = false;}
+		}
+		else
+			{vIsNoError = false;}
+
+		if(vIsNoError && 
+				(pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+			//AVOIDING ATOMICS FOR THE TIME BEING
+			if(crx_c_pthread_rwlock_wrlock(&(pThis->gPrivate_rwLock__lockedPortions)) == 0)
+			{
+				pThis->gPrivate_numberOfActiveSequentialRequests = 
+						pThis->gPrivate_numberOfActiveSequentialRequests + 1;
+
+				crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock__lockedPortions));
+			}
+			else
+				{vIsNoError = false;}
+
+			crx_c_pthread_rwlock_unlock(&(pThis->gPrivate_rwLock));
+
+			if(vIsNoError)
+			{
+				if(tInfoOfSequential->gIsDirty)
+				{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD))
+					vIsNoError = crx_c_os_fileSystem_internal_posix_doPwrite(
+							pThis->gPrivate_osFileHandle, 
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gIndex, 
+							tInfoOfSequential->gOffset);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+					vIsNoError = crx_c_os_fileSystem_private_win32_doWriteFile(
+							pThis->gPrivate_osFileHandle,
+							tInfoOfSequential->gWriteBuffer, 
+							tInfoOfSequential->gIndex, 
+							tInfoOfSequential->gOffset);
+#endif
+				}
+
+				if(vIsNoError)
+				{
+					tInfoOfSequential->gOffset = tInfoOfSequential->gOffset + 
+							tInfoOfSequential->gWriteBufferLength;
+					tInfoOfSequential->gIndex = 0;
+					tInfoOfSequential->gIsDirty = false;
+					tInfoOfSequential->gWriteBufferLength = 0;
+				}
+			}
+		}
+		else if(vIsNoError && 
+				(pThis->gPrivate_osFileHandle__2 != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{
+		}
+	}
+	
+	return vIsNoError;
+	CRX_SCOPE_END
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_getOrderOfRegions1(
+		void const * CRX_NOT_NULL pRegion, void const * CRX_NOT_NULL pRegion__2)
+{
+	if(((Crx_C_Os_FileSystem_Io_Region const *)pRegion)->gBaseAddress < 
+			((Crx_C_Os_FileSystem_Io_Region const *)pRegion__2)->gBaseAddress)
+		{return -1;}
+	else if(((Crx_C_Os_FileSystem_Io_Region const *)pRegion)->gBaseAddress > 
+			((Crx_C_Os_FileSystem_Io_Region const *)pRegion__2)->gBaseAddress)
+		{return 1;}
+	else
+		{return 0;}
+}
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_getOrderOfRegions2(
+		void const * CRX_NOT_NULL pRegion, void const * CRX_NOT_NULL pRegion__2)
+{
+	if(((Crx_C_Os_FileSystem_Io_Region const *)pRegion)->gBaseOffset < 
+			((Crx_C_Os_FileSystem_Io_Region const *)pRegion__2)->gBaseOffset)
+		{return -1;}
+	else if(((Crx_C_Os_FileSystem_Io_Region const *)pRegion)->gBaseOffset > 
+			((Crx_C_Os_FileSystem_Io_Region const *)pRegion__2)->gBaseOffset)
+		{return 1;}
+	else
+	{
+		if(((Crx_C_Os_FileSystem_Io_Region const *)pRegion)->gLength < 
+				((Crx_C_Os_FileSystem_Io_Region const *)pRegion__2)->gLength)
+			{return -1;}
+		else if(((Crx_C_Os_FileSystem_Io_Region const *)pRegion)->gLength > 
+				((Crx_C_Os_FileSystem_Io_Region const *)pRegion__2)->gLength)
+			{return 1;}
+		else
+			{return 0;}
+	}
+}
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_constructIndexFromRegion(
+		void * CRX_NOT_NULL pIndex, void const * CRX_NOT_NULL pRegion)
+	{*((unsigned char * *)pIndex) = ((Crx_C_Os_FileSystem_Io_Region)pRegion)->gBaseAddress;}
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_constructIndexFromRegion2(
+		void * CRX_NOT_NULL pIndex, void const * CRX_NOT_NULL pRegion)
+	{*((uint64_t *)pIndex) = ((Crx_C_Os_FileSystem_Io_Region)pRegion)->gBaseOffset;}
+
+
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_getOrderOfPortions(
+		void const * CRX_NOT_NULL pPortion, void const * CRX_NOT_NULL pPortion__2)
+{
+	if(((Crx_C_Os_FileSystem_Io_Portion const *)pPortion)->gBaseOffset < 
+			((Crx_C_Os_FileSystem_Io_Portion const *)pPortion__2)->gBaseOffset)
+		{return -1;}
+	else if(((Crx_C_Os_FileSystem_Io_Portion const *)pPortion)->gBaseOffset > 
+			((Crx_C_Os_FileSystem_Io_Portion const *)pPortion__2)->gBaseOffset)
+		{return 1;}
+	else
+	{
+		if(((Crx_C_Os_FileSystem_Io_Portion const *)pPortion)->gLength < 
+				((Crx_C_Os_FileSystem_Io_Portion const *)pPortion__2)->gLength)
+			{return -1;}
+		else if(((Crx_C_Os_FileSystem_Io_Portion const *)pPortion)->gLength > 
+				((Crx_C_Os_FileSystem_Io_Portion const *)pPortion__2)->gLength)
+			{return 1;}
+		else
+			{return 0;}
+	}
+}
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_constructIndexFromPortion(
+		void * CRX_NOT_NULL pIndex, void const * CRX_NOT_NULL pPortion)
+	{*((uint64_t *)pIndex) = ((Crx_C_Os_FileSystem_Io_Portion)pPortion)->gBaseOffset;}
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_getOrderOfUnsignedCharPointers(
+		void const * CRX_NOT_NULL pUnsignedCharPointer, 
+		void const * CRX_NOT_NULL pUnsignedCharPointer2)
+{
+	if((*((unsigned char * *)pUnsignedCharPointer)) < 
+			(*((unsigned char * *)pUnsignedCharPointer2)))
+		{return -1;}
+	else if((*((unsigned char * *)pUnsignedCharPointer)) > 
+			(*((unsigned char * *)pUnsignedCharPointer2)))
+		{return 1;}
+	else
+		{return 0;}
+}
+CRX__LIB__PUBLIC_C_FUNCTION() int32_t crx_c_os_fileSystem_io_getOrderOfUint64(
+		void const * CRX_NOT_NULL pUint64, void const * CRX_NOT_NULL pUint64__2)
+{
+	if((*((uint64_t *)pUint64)) < (*((uint64_t *)pUint64__2)))
+		{return -1;}
+	else if((*((uint64_t *)pUint64)) > (*((uint64_t *)pUint64__2)))
+		{return 1;}
+	else
+		{return 0;}
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io_Region * crx_c_os_fileSystem_io_region_new()
+	{return ((Crx_C_Os_FileSystem_Io_Region *)calloc(1, sizeof(Crx_C_Os_FileSystem_Io_Region)));}
+
+CRX__C__TYPE_BLUE_PRINT__DEFINE_GET_BLUE_PRINT(
+		Crx_C_Os_FileSystem_Io_Region, crx_c_os_fileSystem_io_region_,
+		CRXM__TRUE, CRXM__FALSE,
+		CRXM__FALSE, CRXM__FALSE,
+		CRXM__FALSE, CRXM__FALSE)
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_region_free(
+		Crx_C_Os_FileSystem_Io_Region * pThis)
+	{free(pThis);}
+
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_TypeBluePrint const * 
+		crx_c_os_fileSystem_io_region_getTypeBluePrintForPointer()
+{
+	static bool vIsNotFirstTime = false;
+	static Crx_C_TypeBluePrint vReturn;
+
+	if(!vIsNotFirstTime)
+	{
+		vReturn.gBYTE_SIZE = sizeof(Crx_C_Os_FileSystem_Io_Region *);
+		vReturn.gIS_COPYABLE = true;
+		vReturn.gIS_GENERIC = false;
+		vReturn.gFUNC__DESTRUCT = NULL;
+		vReturn.gFUNC__COPY_CONSTRUCT = NULL;
+		vReturn.gFUNC__MOVE_CONSTRUCT = NULL;
+		vReturn.gFUNC__MOVE_DESTRUCT = NULL;
+		vReturn.gFUNC__GET_BYTE_SIZE_OF = NULL;
+
+		vIsNotFirstTime = true;
+	}
+
+	return &vReturn;
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_infoOfSequential_construct(
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * pThis, size_t pRegionAlignmentValue,
+		size_t pBufferSize, bool pIsToIgnoreRegions)
+{
+	/*
+		TO EASE THE DISTANCE REQUIREMENT ON CLIENT CODE FOR THE DISTANCE BETWEEN ACCESS DONE BY TWO 
+		SEQUENTIAL WRITERS, ALL BUFFERS MUST BE LARGER THAN THE ALIGNMENT VALUE FOR REGIONS. 
+		HOWEVER, THIS CORRECTION IS ONLY DONE IF THE ALIGNMENT VALUE IS SMALLER THAN THE LIMIT,
+		CRX__C__OS__FILE_SYSTEM__IO__MAXIMUM_MEMORY_PAGE_SIZE_TO_CORRECT_BUFFER_WITH. THIS IS 
+		BECAUSE THIS VALUE CAN BE VERY LARGE, REACHING THE TERABYTES RANGE. IN THAT CASE, THE Io 
+		CLASS WILL NOT ALLOW MORE THAN ONE SEQUENTIAL ACCESSOR TO EXIST WHILE THERE ARE REGIONS 
+		EXISTING, HENCE, IN THAT CASE THERE IS NO NEED TO WORRY ABOUT THE DISTANCE REQUIREMENT
+		BETWEEN THE ACCESS OF TWO SEQUENTIAL ACCESSORS.
+	*/
+	size_t vBufferSize = ((pBufferSize <= 1) ? 0 : 
+			(((pBufferSize < pRegionAlignmentValue) && (pRegionAlignmentValue < 
+			CRX__C__OS__FILE_SYSTEM__IO__MAXIMUM_MEMORY_PAGE_SIZE_TO_CORRECT_BUFFER_WITH)) ? 
+			pRegionAlignmentValue : pBufferSize));
+	pThis->gOffset = 0;
+	pThis->gIndex = 0;
+	pThis->gIsDirty = false;
+	pThis->gIsInUse = false;
+	pThis->gIsToIgnoreRegions = pIsToIgnoreRegions;
+	pThis->gBufferCapacity = 0;
+
+	if(vBufferSize > 0)
+	{
+		//ROUNDING UP TO NEAREST CRX__OS__FILE_SYSTEM__SAFE_ROUND_SIZE.
+		pThis->gBufferCapacity = ((vBufferSize + CRX__OS__FILE_SYSTEM__SAFE_ROUND_SIZE - 1) & 
+				(~((size_t)CRX__OS__FILE_SYSTEM__SAFE_ROUND_INVERTED_MASK)));
+		pThis->gWriteBuffer = ((unsigned char *)malloc(pThis->gBufferCapacity));
+		pThis->gReadBuffer = crx_c_rings_unsignedChar_new(pThis->gBufferCapacity);
+
+		if((pThis->gReadBuffer != NULL) && 
+				crx_c_rings_unsignedChar_getCapacity(pThis->gReadBuffer) < pThis->gBufferCapacity)
+		{
+			crx_c_rings_unsignedChar_destruct(pThis->gReadBuffer);
+			crx_c_rings_unsignedChar_free(pThis->gReadBuffer);
+			pThis->gReadBuffer = NULL;
+		}
+	}
+	else
+	{
+		pThis->gBufferCapacity = 0;
+		pThis->gWriteBuffer = NULL;
+		pThis->gReadBuffer = NULL;
+	}
+
+	CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Io_Region, &(pThis->gRegion__lock));
+}
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_infoOfSequential_copyConstruct(
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * pThis, 
+		Crx_C_Os_FileSystem_Io_InfoOfSequential const * CRX_NOT_NULL pInfoOfSequential)
+	{exit();}
+
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io_InfoOfSequential * 
+		crx_c_os_fileSystem_io_infoOfSequential_new(size_t pBufferSize, bool pIsToIgnoreRegions)
+{
+	Crx_C_Os_FileSystem_Io_InfoOfSequential * vReturn = 
+			((Crx_C_Os_FileSystem_Io_InfoOfSequential *)malloc(sizeof(
+			Crx_C_Os_FileSystem_Io_InfoOfSequential)));
+
+	if(vReturn != NULL)
+	{
+		crx_c_os_fileSystem_io_infoOfSequential_construct(vReturn, pBufferSize, 
+				pIsToIgnoreRegions);
+	}
+
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io_InfoOfSequential * 
+		crx_c_os_fileSystem_io_infoOfSequential_copyNew(
+		Crx_C_Os_FileSystem_Io_InfoOfSequential const * CRX_NOT_NULL pInfoOfSequential)
+	{exit();}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io_InfoOfSequential * 
+		crx_c_os_fileSystem_io_infoOfSequential_moveNew(
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * CRX_NOT_NULL pInfoOfSequential)
+{
+	Crx_C_Os_FileSystem_Io_InfoOfSequential * vReturn = 
+			((Crx_C_Os_FileSystem_Io_InfoOfSequential *)malloc(
+			sizeof(Crx_C_Os_FileSystem_Io_InfoOfSequential)));
+
+	if(vReturn != NULL)
+		{memcpy(vReturn, pInfoOfSequential, sizeof(Crx_C_Os_FileSystem_Io_InfoOfSequential));}
+
+	return vReturn;
+}
+
+CRX__C__TYPE_BLUE_PRINT__DEFINE_GET_BLUE_PRINT(
+		Crx_C_Os_FileSystem_Io_InfoOfSequential, crx_c_os_fileSystem_io_infoOfSequential_,
+		CRXM__TRUE, CRXM__TRUE,
+		CRXM__FALSE, CRXM__TRUE,
+		CRXM__FALSE, CRXM__FALSE)
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_infoOfSequential_destruct(
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * pThis)
+{
+	if(pThis->gWriteBuffer != NULL)
+		{free(pThis->gWriteBuffer);}
+	if(pThis->gReadBuffer != NULL)
+	{
+		crx_c_rings_unsignedChar_destruct(pThis->gReadBuffer);
+		crx_c_rings_unsignedChar_free(pThis->gReadBuffer);
+	}
+}
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_infoOfSequential_free(
+		Crx_C_Os_FileSystem_Io_InfoOfSequential * pThis)
+	{free(pThis);}
+
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_TypeBluePrint const * 
+		crx_c_os_fileSystem_io_infoOfSequential_getTypeBluePrintForPointer()
+{
+	static bool vIsNotFirstTime = false;
+	static Crx_C_TypeBluePrint vReturn;
+
+	if(!vIsNotFirstTime)
+	{
+		vReturn.gBYTE_SIZE = sizeof(Crx_C_Os_FileSystem_Io_InfoOfSequential *);
+		vReturn.gIS_COPYABLE = true;
+		vReturn.gIS_GENERIC = false;
+		vReturn.gFUNC__DESTRUCT = NULL;
+		vReturn.gFUNC__COPY_CONSTRUCT = NULL;
+		vReturn.gFUNC__MOVE_CONSTRUCT = NULL;
+		vReturn.gFUNC__MOVE_DESTRUCT = NULL;
+		vReturn.gFUNC__GET_BYTE_SIZE_OF = NULL;
+
+		vIsNotFirstTime = true;
+	}
+
+	return &vReturn;
+}
+
+//----------------
+//----------------
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io_Portion * 
+		crx_c_os_fileSystem_io_portion_new()
+{
+	Crx_C_Os_FileSystem_Io_Portion * vReturn = ((Crx_C_Os_FileSystem_Io_Portion *)malloc(sizeof(
+			Crx_C_Os_FileSystem_Io_Portion)));
+
+	if(vReturn != NULL)
+		{crx_c_os_fileSystem_io_portion_construct(vReturn);}
+
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io_Portion * 
+		crx_c_os_fileSystem_io_portion_copyNew(
+		Crx_C_Os_FileSystem_Io_Portion const * CRX_NOT_NULL pPortion)
+{
+	Crx_C_Os_FileSystem_Io_Portion * vReturn = 
+			((Crx_C_Os_FileSystem_Io_Portion *)malloc(sizeof(Crx_C_Os_FileSystem_Io_Portion)));
+
+	if(vReturn != NULL)
+		{memcpy(vReturn, pPortion, sizeof(Crx_C_Os_FileSystem_Io_Portion));}
+
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_Io_Portion *
+		crx_c_os_fileSystem_io_portion_moveNew(
+		Crx_C_Os_FileSystem_Io_Portion * CRX_NOT_NULL pPortion)
+{
+	Crx_C_Os_FileSystem_Io_Portion * vReturn = 
+			((Crx_C_Os_FileSystem_Io_Portion *)malloc(sizeof(Crx_C_Os_FileSystem_Io_Portion)));
+
+	if(vReturn != NULL)
+		{memcpy(vReturn, pPortion, sizeof(Crx_C_Os_FileSystem_Io_Portion));}
+
+	return vReturn;
+}
+
+CRX__C__TYPE_BLUE_PRINT__DEFINE_GET_BLUE_PRINT(
+		Crx_C_Os_FileSystem_Io_Portion, crx_c_os_fileSystem_io_portion_,
+		CRXM__TRUE, CRXM__FALSE,
+		CRXM__TRUE, CRXM__FALSE,
+		CRXM__FALSE, CRXM__FALSE)
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_io_portion_free(
+		Crx_C_Os_FileSystem_Io_Portion * pThis)
+	{free();}
+		
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_TypeBluePrint const * 
+		crx_c_os_fileSystem_io_portion_getTypeBluePrintForPointer()
+{
+	static bool vIsNotFirstTime = false;
+	static Crx_C_TypeBluePrint vReturn;
+
+	if(!vIsNotFirstTime)
+	{
+		vReturn.gBYTE_SIZE = sizeof(Crx_C_Os_FileSystem_Io_Portion *);
+		vReturn.gIS_COPYABLE = true;
+		vReturn.gIS_GENERIC = false;
+		vReturn.gFUNC__DESTRUCT = NULL;
+		vReturn.gFUNC__COPY_CONSTRUCT = NULL;
+		vReturn.gFUNC__MOVE_CONSTRUCT = NULL;
+		vReturn.gFUNC__MOVE_DESTRUCT = NULL;
+		vReturn.gFUNC__GET_BYTE_SIZE_OF = NULL;
+
+		vIsNotFirstTime = true;
+	}
+
+	return &vReturn;
+}
+	
+
+
 
 bool crx_c_os_fileSystem_isCharacterInvalidInSegment(uint32_t pCodePoint)
 {
@@ -5745,7 +9428,7 @@ void crx_c_os_fileSystem_normalizePath(Crx_C_String * CRX_NOT_NULL pReturn,
 							size_t tStartIndex = crx_c_arrays_size_copyGet(&vIndices, tI - 1) + 1;
 
 							crx_c_string_insertElementsAt(&tPathToken, 0, &vPath, tStartIndex,
-									crx_c_arrays_size_copyGet(&vIndices, tI) - tStartIndex - 1));
+									crx_c_arrays_size_copyGet(&vIndices, tI) - tStartIndex - 1);
 						}
 					}
 					else 
@@ -5898,39 +9581,39 @@ bool crx_c_os_fileSystem_enforcePathAsDirectoryPath(Crx_C_String * CRX_NOT_NULL 
 */
 Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_open(
 		Crx_C_String const * CRX_NOT_NULL pFileFullPath,
+		uint32_t pDepthLimitOfReparsePoints,
 		Crx_C_Os_FileSystem_FileOpenMode pFileOpenMode,
-		Crx_C_Os_FileSystem_FileAccesMode pFileAccesMode,
+		Crx_C_Os_FileSystem_FileAccessMode pFileAccessMode,
+		Crx_C_Os_FileSystem_FileShareMode pFileShareMode,
+		Crx_C_Os_FileSystem_Contract const * CRX_NOT_NULL pContract)
+{
+	return crx_c_os_fileSystem_internal_doOpen(pFileFullPath, pDepthLimitOfReparsePoints, NULL,
+			pFileOpenMode, pFileAccessMode, pFileShareMode, pContract, false, NULL);
+}
+Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_open2(
+		Crx_C_Os_FileSystem_Iterator_Record * pRecord,
+		Crx_C_Os_FileSystem_FileAccessMode pFileAccessMode,
 		Crx_C_Os_FileSystem_FileShareMode pFileShareMode)
 {
-	#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
-			(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
-			(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
-	Crx_C_String vRemainingPath /*= ?*/;
-	Crx_C_Os_FileSystem_OsFileHandle vOsFileHandle = -1;
-
-	crx_c_string_construct(&vRemainingPath);
-
-	if(crx_c_string_getSize(pFullPath) >= PATH_MAX)
-	{
-		vOsFileHandle = crx_c_os_fileSystem_private_posix_lookAt(
-				pFileFullPath, &vRemainingPath, NULL);
-
-		
-	}
-	else
-	{
-	}
-	#elif(CRX__NON_CRXED__OS__SETTING__IS_WINDOWS)
-	#endif
+	return crx_c_os_fileSystem_internal_doOpen(
+			crx_c_os_fileSystem_iterator_record_getInternalFullPath(pRecord), ((size_t)(-1)), 
+			pRecord, CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__OPEN, pFileAccessMode, pFileShareMode, 
+			NULL, false, NULL);
 }
-Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_open__do(
+/*
+	pIsToEnableShareDeleteWhenPossible IS MEANT FOR THE LOCK IMPLEMENTATION, AND POSSIBLY OTHER
+			INTERNAL USE. DO NOT EXPOSE THIS TO CLIENT CODE.
+*/
+Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_internal_doOpen(
 		Crx_C_String const * CRX_NOT_NULL pFileFullPath,
 		uint32_t pDepthLimitOfReparsePoints,
 		Crx_C_Os_FileSystem_Iterator_Record * pRecord,
 		Crx_C_Os_FileSystem_FileOpenMode pFileOpenMode,
-		Crx_C_Os_FileSystem_FileAccesMode pFileAccesMode,
+		Crx_C_Os_FileSystem_FileAccessMode pFileAccessMode,
 		Crx_C_Os_FileSystem_FileShareMode pFileShareMode,
-		Crx_C_Os_FileSystem_Contract const * pContract)
+		Crx_C_Os_FileSystem_Contract const * pContract,
+		bool pIsToEnableShareDeleteWhenPossible,
+		Crx_C_String * pInternalFileFullPath)
 {
 	CRX_SCOPE_META
 	assert((pRecord == NULL) || CRX__ARE_POINTERS_TO_SAME_OBJECT(pFileFullPath,
@@ -5939,6 +9622,451 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_open__do(
 
 	CRX_SCOPE
 	Crx_C_Os_FileSystem_Operation vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__NULL;
+	Crx_C_Os_FileSystem_Existance vExistance = CRX__C__OS__FILE_SYSTEM__EXISTANCE__NULL;
+	size_t vExclusiveEndIndexOfExistingRoute = 0;
+	Crx_C_String vVerifiedPathPrefix /*= ?*/;
+	Crx_C_String vVerifiedRoute /*= ?*/;
+	Crx_C_String vFullPath /*= ?*/;
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	Crx_C_String vRemainingPartialPath /*= ?*/;
+	Crx_C_Os_FileSystem_Internal_Posix_FileHandle vFileHandle /*= ?*/;
+	int32_t vFlags = 0;
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	uint32_t vCreationDisposition = 0;
+	uint32_t vDesiredAccess = 0;
+	uint32_t vShareMode = 0;
+#endif
+	size_t vLengthResidueWhenDirectory = 0;
+	size_t vLengthResidue = 0;
+	bool vIsNoError = true;
+	Crx_C_Os_FileSystem_OsFileHandle vReturn = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+	
+	crx_c_string_construct(&vVerifiedPathPrefix);
+	crx_c_string_construct(&vVerifiedRoute);
+	crx_c_string_construct(&vFullPath);
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	crx_c_string_construct(&vRemainingPartialPath);
+	crx_c_os_fileSystem_internal_posix_fileHandle_construct(&vFileHandle);
+#endif
+
+	if((pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL) ||
+			(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY))
+		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)
+		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;}
+	else
+		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__READ;}
+
+	if(pRecord == NULL)
+	{
+		if(crx_c_os_fileSystem_verifyFileSystemPath(pContract, vOperation,
+				pFileFullPath, pDepthLimitOfReparsePoints, false, 
+				&vVerifiedPathPrefix, &vVerifiedRoute,
+				NULL, &vLengthResidueWhenDirectory, &vLengthResidue, NULL, NULL))
+		{
+			vIsNoError = crx_c_os_fileSystem_verifyFileSystemPath2(pContract, vOperation, 
+					NULL, pDepthLimitOfReparsePoints, &vExistance, 
+					&vVerifiedPathPrefix, &vVerifiedRoute, &vExclusiveEndIndexOfExistingRoute)
+		}
+		else
+			{vIsNoError = false;}
+
+		if(vIsNoError && crx_c_string_isEndingWith2(&vVerifiedRoute, 
+				CRX__OS__FILE_SYSTEM__SEPERATOR_STRING))
+			{vIsNoError = false;}
+
+		if(vIsNoError && (vExistance == CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST) &&
+				(vOperation == CRX__C__OS__FILE_SYSTEM__OPERATION__READ) &&
+				(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN))
+		{
+			vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;
+
+			if(crx_c_os_fileSystem_verifyFileSystemPath(pContract, vOperation,
+					pFileFullPath, pDepthLimitOfReparsePoints, false, 
+					&vVerifiedPathPrefix, &vVerifiedRoute,
+					NULL, &vLengthResidueWhenDirectory, &vLengthResidue, NULL, NULL))
+			{
+				vIsNoError = crx_c_os_fileSystem_verifyFileSystemPath2(pContract, vOperation, 
+						NULL, pDepthLimitOfReparsePoints, &vExistance, 
+						&vVerifiedPathPrefix, &vVerifiedRoute, &vExclusiveEndIndexOfExistingRoute)
+
+				if(vIsNoError && (vExistance != CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST))
+					{vIsNoError = false;}
+			}
+			else
+				{vIsNoError = false;}
+		}
+
+		if(vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedPathPrefix))
+			{vIsNoError = false;}
+		if(vIsNoError && !crx_c_string_appendChars(&vFullPath, 
+				crx_c_string_getCharsPointer(&vVerifiedRoute), vExclusiveEndIndexOfExistingRoute))
+			{vIsNoError = false;}
+	}
+	else
+		{vIsNoError = crx_c_string_copyAssignFrom(&vFullPath, pFileFullPath);}
+
+	if(vIsNoError && (pRecord != NULL) &&
+			(vExistance == CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST))
+	{
+		if((pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE) ||
+				(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN))
+		{
+			bool tIsFirstTime = true;
+			size_t tCurrentIndex = vExclusiveEndIndexOfExistingRoute;
+			size_t tCurrentEndIndex = crx_c_string_getIndexOfFirstOccuranceOf3(&vVerifiedRoute, 
+					tCurrentIndex, CRX__OS__FILE_SYSTEM__SEPERATOR_STRING, 1, 0);
+
+			while(vIsNoError && (tCurrentEndIndex != ((size_t)(-1))))
+			{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+				if(tIsFirstTime)
+				{
+					if(vIsNoError && !crx_c_string_appendChars(&vFullPath, 
+							crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
+							tCurrentEndIndex - tCurrentIndex + 1))
+						{vIsNoError = false;}
+
+					if(vIsNoError && !crx_c_os_fileSystem_internal_posix_lookAt2(&vFileHandle,
+							&vFullPath, &vRemainingPartialPath))
+						{vIsNoError = false;}
+
+					tIsFirstTime = false;
+				}
+				else
+				{
+					if(vIsNoError && !crx_c_os_fileSystem_internal_posix_replaceOpenat(&vFileHandle,
+							&vRemainingPartialPath, 
+							O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/, 0))
+						{vIsNoError = false;}
+
+					if(!vIsNoError)
+					{
+						crx_c_string_empty(&vRemainingPartialPath);
+
+						vIsNoError = crx_c_string_appendChars(&vRemainingPartialPath, 
+								crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
+								tCurrentEndIndex - tCurrentIndex + 1);
+					}
+				}
+
+				if(vIsNoError && !crx_c_os_fileSystem_internal_posix_mkdirat(&vFileHandle,
+						crx_c_getCString(&vRemainingPartialPath), 0777))
+					{vIsNoError = false;}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+				vIsNoError = crx_c_string_appendChars(&vFullPath, 
+						crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
+						tCurrentEndIndex - tCurrentIndex + 1);
+						
+				if(vIsNoError && !crx_c_os_fileSystem_private_win32_doCreateDirectory(
+						false, &vFullPath, NULL, NULL))
+					{vIsNoError = false;}
+#endif
+
+				tCurrentIndex = tCurrentEndIndex + 1;
+				tCurrentEndIndex = crx_c_string_getIndexOfFirstOccuranceOf3(&vVerifiedRoute, 
+						tCurrentIndex, CRX__OS__FILE_SYSTEM__SEPERATOR_STRING, 1, 0);
+			}
+			
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+			crx_c_os_fileSystem_internal_posix_close(&vFileHandle);
+#endif
+			
+			if(vIsNoError && !crx_c_string_appendChars(&vFullPath, 
+					crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
+					crx_c_string_getSize(&vVerifiedRoute) - tCurrentIndex))
+				{vIsNoError = false;}
+		}
+		else
+			{vIsNoError = false;}
+	}
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)
+		{vFlags = (O_CREAT | O_EXCL);}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN)
+		{vFlags = O_CREAT;}
+	
+	if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY)
+		{vFlags = (vFlags | O_RDONLY);}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL)
+		{vFlags = (vFlags | O_RDWR);}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY)
+		{vFlags = (vFlags | O_WRONLY);}
+
+	if(vIsNoError && !crx_c_os_fileSystem_internal_posix_lookAt2(&vFileHandle,
+			&vFullPath, &vRemainingPartialPath))
+		{vIsNoError = false;}
+	if(vIsNoError && !crx_c_os_fileSystem_internal_posix_replaceOpenat(&vFileHandle, 
+			&vRemainingPartialPath, vFlags, 0777))
+		{vIsNoError = false;}
+		
+	if(vIsNoError)
+	{
+		if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE)
+			{vIsNoError = crx_c_os_fileSystem_private_posix_flock(&vFileHandle, LOCK_EX|LOCK_NB);}
+		else if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__SHARED)
+			{vIsNoError = crx_c_os_fileSystem_private_posix_flock(&vFileHandle, LOCK_SH|LOCK_NB);}
+
+		if(!vIsNoError)
+			{crx_c_os_fileSystem_internal_posix_close(&vFileHandle);}
+
+		vReturn = vFileHandle.gFileDescriptor;
+	}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)
+		{vCreationDisposition = CREATE_NEW;}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__OPEN)
+		{vCreationDisposition = OPEN_EXISTING;}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN)
+		{vCreationDisposition = OPEN_ALWAYS;}
+
+	if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY)
+		{vDesiredAccess = GENERIC_READ;}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL)
+		{vDesiredAccess = (GENERIC_READ | GENERIC_WRITE);}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY)
+		{vDesiredAccess = GENERIC_WRITE;}
+
+	if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__SHARED)
+	{
+		vShareMode = (FILE_SHARE_READ | FILE_SHARE_WRITE | (pIsToEnableShareDeleteWhenPossible ?
+				FILE_SHARE_DELETE : 0));
+	}
+	else if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE)
+		{vShareMode = (pIsToEnableShareDeleteWhenPossible ? FILE_SHARE_DELETE : 0);}
+	
+
+	if(vIsNoError)
+	{
+		vReturn = crx_c_os_fileSystem_private_win32_createFile(false, &vFullPath, vDesiredAccess, 
+				vShareMode, NULL, vCreationDisposition, FILE_ATTRIBUTE_NORMAL, NULL);
+	}
+#endif
+
+	if(vReturn && pInternalFileFullPath)
+	{
+		if(!crx_c_string_tryToPilferSwapContentWith(pInternalFileFullPath, &vFullPath))
+		{
+			crx_c_string_destruct(pInternalFileFullPath);
+			memcpy(pInternalFileFullPath, &vFullPath, sizeof(Crx_C_String));
+			crx_c_string_construct(&vFullPath);
+		}
+	}
+
+	crx_c_string_destruct(&vVerifiedPathPrefix);
+	crx_c_string_destruct(&vVerifiedRoute);
+	crx_c_string_destruct(&vFullPath);
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	crx_c_os_fileSystem_internal_posix_fileHandle_destruct(&vFileHandle);
+	crx_c_string_destruct(&vRemainingPartialPath);
+#endif
+
+	return vReturn;
+
+	CRX_SCOPE_END
+}
+/*
+	pMinimumPrefixLength MUST BE THE LENGTH OF THE PREFIX, WHICH INCLUDES THE ENDING SLASH, OR LESS 
+			SUCH AS IT FALLS IN THE LAST SEGMENT OF THE PREFIX
+			
+	CURRENTLY, pFileFullPath SHOULD BE NO MORE THAN 1000 BYTES.
+*/
+Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_internal_rawOpen(
+		char const * CRX_NOT_NULL pFileFullPath, size_t pMinimumPrefixLength,
+		Crx_C_Os_FileSystem_FileOpenMode pFileOpenMode,
+		Crx_C_Os_FileSystem_FileAccessMode pFileAccessMode,
+		Crx_C_Os_FileSystem_FileShareMode pFileShareMode,
+		bool pIsToEnableShareDeleteWhenPossible)
+{
+	char vFileFullPath[1024] /*= ?*/;
+	Crx_C_Os_FileSystem_Operation vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__NULL;
+	Crx_C_Os_FileSystem_Existance vExistance = CRX__C__OS__FILE_SYSTEM__EXISTANCE__NULL;
+	size_t vExclusiveEndIndexOfExistingPath = 0;
+	size_t vLength = strlen(pFileFullPath);
+	size_t vCurrentIndex = pMinimumPrefixLength;
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	int32_t vFlags = 0;
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	uint32_t vCreationDisposition = 0;
+	uint32_t vDesiredAccess = 0;
+	uint32_t vShareMode = 0;
+#endif
+	bool vIsNoError = true;
+	Crx_C_Os_FileSystem_OsFileHandle vReturn = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+	
+	if(vLength < 1001)//THIS IS NOT A MISTAKE.
+		{memcpy(&(vFileFullPath[0]), pFileFullPath, vLength + 1);}
+	else
+		{vIsNoError = false;}
+	
+	if(vIsNoError && (vFileFullPath[vLength - 1] == CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR))
+		{vIsNoError = false;}
+
+	if((pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL) ||
+			(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY))
+		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)
+		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;}
+	else
+		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__READ;}
+
+	if(vIsNoError && ((pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN) ||
+			(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)))
+	{
+		while((vFileFullPath[vCurrentIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR) &&
+				(vCurrentIndex < vLength))
+			{vCurrentIndex++;}
+
+		if(vCurrentIndex < vLength)
+		{
+			size_t tCurrentIndex = vLength - 1;
+			
+			while(tCurrentIndex != vCurrentIndex)
+			{
+				while((vFileFullPath[tCurrentIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR) &&
+						(tCurrentIndex > vCurrentIndex))
+					{tCurrentIndex--;}
+
+				if(tCurrentIndex != vCurrentIndex)
+				{
+					vFileFullPath[tCurrentIndex] = 0;
+
+					if(crx_c_os_fileSystem_rawDoesEntityExists(&(vFileFullPath[0])))
+					{
+						vFileFullPath[tCurrentIndex] = CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR;
+						vExclusiveEndIndexOfExistingPath = tCurrentIndex;
+						
+						break;
+					}
+					else
+					{
+						vFileFullPath[tCurrentIndex] = CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR;
+						tCurrentIndex = tCurrentIndex - 1;
+					}
+				}
+			}
+		}
+		else
+			{vExclusiveEndIndexOfExistingPath = vLength;}
+	}
+
+	if(vIsNoError && (vExclusiveEndIndexOfExistingPath < vLength))
+	{
+		bool tIsFirstTime = true;
+		size_t tCurrentIndex = vExclusiveEndIndexOfExistingPath;
+		size_t tCurrentEndIndex = tCurrentIndex + 1;
+		
+		while((vFileFullPath[tCurrentEndIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR) &&
+				(tCurrentEndIndex < vLength))
+			{tCurrentEndIndex++;}
+
+		while(vIsNoError && (tCurrentEndIndex != vLength))
+		{
+			vFileFullPath[tCurrentEndIndex] = 0;
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+			crx_c_os_fileSystem_internal_posix_rawMkdir(&(vFileFullPath[0]), 0777);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+			crx_c_os_fileSystem_private_win32_rawDoCreateDirectory(&(vFileFullPath[0]), NULL, NULL);
+#endif
+
+			vFileFullPath[tCurrentEndIndex] = CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR;
+			
+			while((vFileFullPath[tCurrentEndIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR) &&
+					(tCurrentEndIndex < vLength))
+				{tCurrentEndIndex++;}
+		}
+	}
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)
+		{vFlags = (O_CREAT | O_EXCL);}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN)
+		{vFlags = O_CREAT;}
+	
+	if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY)
+		{vFlags = (vFlags | O_RDONLY);}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL)
+		{vFlags = (vFlags | O_RDWR);}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY)
+		{vFlags = (vFlags | O_WRONLY);}
+
+	if(vIsNoError && !crx_c_os_fileSystem_internal_posix_rawOpen(&vReturn, 
+			&(vFileFullPath[0]), vFlags, 0777))
+		{vIsNoError = false;}
+		
+	if(vIsNoError)
+	{
+		if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE)
+			{vIsNoError = crx_c_os_fileSystem_private_posix_rawFlock(vReturn, LOCK_EX|LOCK_NB);}
+		else if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__SHARED)
+			{vIsNoError = crx_c_os_fileSystem_private_posix_rawFlock(vReturn, LOCK_SH|LOCK_NB);}
+
+		if(!vIsNoError)
+			{crx_c_os_fileSystem_close(&vReturn);}
+	}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)
+		{vCreationDisposition = CREATE_NEW;}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__OPEN)
+		{vCreationDisposition = OPEN_EXISTING;}
+	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN)
+		{vCreationDisposition = OPEN_ALWAYS;}
+
+	if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__READ_ONLY)
+		{vDesiredAccess = GENERIC_READ;}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL)
+		{vDesiredAccess = (GENERIC_READ | GENERIC_WRITE);}
+	else if(pFileAccessMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY)
+		{vDesiredAccess = GENERIC_WRITE;}
+
+	if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__SHARED)
+	{
+		vShareMode = (FILE_SHARE_READ | FILE_SHARE_WRITE | (pIsToEnableShareDeleteWhenPossible ?
+				FILE_SHARE_DELETE : 0));
+	}
+	else if(pFileShareMode == CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE)
+		{vShareMode = (pIsToEnableShareDeleteWhenPossible ? FILE_SHARE_DELETE : 0);}
+
+	if(vIsNoError)
+	{
+		vReturn = crx_c_os_fileSystem_private_win32_rawCreateFile(&(vFileFullPath[0]), 
+				vDesiredAccess, vShareMode, NULL, vCreationDisposition, FILE_ATTRIBUTE_NORMAL, 
+				NULL);
+	}
+#endif
+
+	return vReturn;
+}
+
+/*
+	REMEMBER, NOT ONLY IS IT DIFFICULT TO OPEN DIRECTORIES IN WINDOWS, OPENING DIRECTORIES DOES NOT 
+			APPEAR SUPPORTED ON WINDOWS9X AT ALL. THEREFORE, ONLY CREATION IS IMPLEMENTED HERE.
+*/
+bool crx_c_os_fileSystem_createDirectory(
+		Crx_C_String const * CRX_NOT_NULL pDirectoryFullPath,
+		uint32_t pDepthLimitOfReparsePoints,
+		Crx_C_Os_FileSystem_Contract const * CRX_NOT_NULL pContract)
+{
 	Crx_C_Os_FileSystem_Existance vExistance = CRX__C__OS__FILE_SYSTEM__EXISTANCE__NULL;
 	size_t vExclusiveEndIndexOfExistingRoute = 0;
 	Crx_C_String vVerifiedPathPrefix /*= ?*/;
@@ -5964,95 +10092,107 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_open__do(
 	crx_c_os_fileSystem_internal_posix_fileHandle_construct(&vFileHandle);
 #endif
 
-	if((pFileAccesMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE) ||
-			(pFileAccesMode == CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__WRITE_ONLY))
-		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;}
-	else if(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE)
-		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;}
-	else
-		{vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__READ;}
-
 	if(pRecord == NULL)
 	{
-		if(crx_c_os_fileSystem_verifyFileSystemPath(pContract, vOperation,
-				pFullPath, pDepthLimitOfReparsePoints, false, 
+		if(crx_c_os_fileSystem_verifyFileSystemPath(pContract, 
+				CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE,
+				pDirectoryFullPath, pDepthLimitOfReparsePoints, false, 
 				&vVerifiedPathPrefix, &vVerifiedRoute,
 				NULL, &vLengthResidueWhenDirectory, &vLengthResidue, NULL, NULL))
 		{
-			vIsNoError = crx_c_os_fileSystem_verifyFileSystemPath2(pContract, vOperation, 
+			vIsNoError = crx_c_os_fileSystem_verifyFileSystemPath2(pContract, 
+					CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE, 
 					NULL, pDepthLimitOfReparsePoints, &vExistance, 
 					&vVerifiedPathPrefix, &vVerifiedRoute, &vExclusiveEndIndexOfExistingRoute)
 		}
 		else
 			{vIsNoError = false;}
 
-		if(vIsNoError && crx_c_string_isEndingWith2(&vVerifiedRoute, 
+		if(vIsNoError && !crx_c_string_isEndingWith2(&vVerifiedRoute, 
 				CRX__OS__FILE_SYSTEM__SEPERATOR_STRING))
 			{vIsNoError = false;}
 
-		if(vIsNoError && (vExistance == CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST) &&
-				(vOperation == CRX__C__OS__FILE_SYSTEM__OPERATION__READ) &&
-				(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN))
-		{
-			vOperation = CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE;
-
-			if(crx_c_os_fileSystem_verifyFileSystemPath(pContract, vOperation,
-					pFullPath, pDepthLimitOfReparsePoints, false, 
-					&vVerifiedPathPrefix, &vVerifiedRoute,
-					NULL, &vLengthResidueWhenDirectory, &vLengthResidue, NULL, NULL))
-			{
-				vIsNoError = crx_c_os_fileSystem_verifyFileSystemPath2(pContract, vOperation, 
-						NULL, pDepthLimitOfReparsePoints, &vExistance, 
-						&vVerifiedPathPrefix, &vVerifiedRoute, &vExclusiveEndIndexOfExistingRoute)
-
-				if(vIsNoError && (vExistance != CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST))
-					{vIsNoError = false;}
-			}
-			else
-				{vIsNoError = false;}
-		}
-
-		if(!vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedPathPrefix)
+		if(vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedPathPrefix))
 			{vIsNoError = false;}
-		if(!vIsNoError && !crx_c_string_appendChars(&vFullPath, 
+		if(vIsNoError && !crx_c_string_appendChars(&vFullPath, 
 				crx_c_string_getCharsPointer(&vVerifiedRoute), vExclusiveEndIndexOfExistingRoute))
 			{vIsNoError = false;}
 	}
+	else
+		{vIsNoError = crx_c_string_copyAssignFrom(&vFullPath, pDirectoryFullPath);}
 
-	if(vIsNoError && (vExistance == CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST))
+	if(vIsNoError &&
+			(vExistance == CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST))
 	{
-		if((pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE) ||
-				(pFileOpenMode == CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN))
-		{
-			size_t tCurrentIndex = vExclusiveEndIndexOfExistingRoute;
-			size_t tCurrentEndIndex = crx_c_string_getIndexOfFirstOccuranceOf3(&vVerifiedRoute, 
-					tCurrentIndex, CRX__OS__FILE_SYSTEM__PRIVATE__NOT_SEPERATOR_STRING, 1, 0);
+		bool tIsFirstTime = true;
+		size_t tCurrentIndex = vExclusiveEndIndexOfExistingRoute;
+		size_t tCurrentEndIndex = crx_c_string_getIndexOfFirstOccuranceOf3(&vVerifiedRoute, 
+				tCurrentIndex, CRX__OS__FILE_SYSTEM__SEPERATOR_STRING, 1, 0);
 
-			if(tCurrentEndIndex != ((size_t)(-1)))
+		while(vIsNoError && (tCurrentEndIndex != ((size_t)(-1))))
+		{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+			if(tIsFirstTime)
 			{
-				if(!vIsNoError && !crx_c_string_appendChars(&vFullPath, 
+				if(vIsNoError && !crx_c_string_appendChars(&vFullPath, 
 						crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
 						tCurrentEndIndex - tCurrentIndex + 1))
 					{vIsNoError = false;}
-#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
-	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
-	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+
 				if(vIsNoError && !crx_c_os_fileSystem_internal_posix_lookAt2(&vFileHandle,
 						&vFullPath, &vRemainingPartialPath))
 					{vIsNoError = false;}
-#endif				
+
+				tIsFirstTime = false;
 			}
+			else
+			{
+				if(vIsNoError && !crx_c_os_fileSystem_internal_posix_replaceOpenat(&vFileHandle,
+						&vRemainingPartialPath, 
+						O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/, 0))
+					{vIsNoError = false;}
+
+				if(!vIsNoError)
+				{
+					crx_c_string_empty(&vRemainingPartialPath);
+
+					vIsNoError = crx_c_string_appendChars(&vRemainingPartialPath, 
+							crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
+							tCurrentEndIndex - tCurrentIndex + 1);
+				}
+			}
+
+			if(vIsNoError && !crx_c_os_fileSystem_internal_posix_mkdirat(&vFileHandle,
+					crx_c_getCString(&vRemainingPartialPath), 0777))
+				{vIsNoError = false;}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+			vIsNoError = crx_c_string_appendChars(&vFullPath, 
+					crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
+					tCurrentEndIndex - tCurrentIndex + 1);
+					
+			if(vIsNoError && !crx_c_os_fileSystem_private_win32_doCreateDirectory(
+					false, &vFullPath, NULL, NULL))
+				{vIsNoError = false;}
+#endif
+
+			tCurrentIndex = tCurrentEndIndex + 1;
+			tCurrentEndIndex = crx_c_string_getIndexOfFirstOccuranceOf3(&vVerifiedRoute, 
+					tCurrentIndex, CRX__OS__FILE_SYSTEM__SEPERATOR_STRING, 1, 0);
 		}
-		else
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+		crx_c_os_fileSystem_internal_posix_close(&vFileHandle);
+#endif
+			
+		if(vIsNoError && !crx_c_string_appendChars(&vFullPath, 
+				crx_c_string_getCharsPointer(&vVerifiedRoute) + tCurrentIndex, 
+				crx_c_string_getSize(&vVerifiedRoute) - tCurrentIndex))
 			{vIsNoError = false;}
 	}
-#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
-	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
-	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
-	if(vIsNoError && !crx_c_os_fileSystem_internal_posix_lookAt2(&vFileHandle,
-			&vFullPath, &vRemainingPartialPath))
-		{vIsNoError = false;}
-#endif
 
 	crx_c_string_destruct(&vVerifiedPathPrefix);
 	crx_c_string_destruct(&vVerifiedRoute);
@@ -6065,20 +10205,215 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_open__do(
 #endif
 
 	return vIsNoError;
+}
+bool crx_c_os_fileSystem_internal_rawCreateDirectory(
+		char const * CRX_NOT_NULL pDirectoryFullPath,
+		uint32_t pDepthLimitOfReparsePoints)
+{
+	
+	char vDirectoryFullPath[1024] /*= ?*/;
+	size_t vLength = strlen(pDirectoryFullPath);
+	size_t vExclusiveEndIndexOfExistingPath = 0;
+	bool vIsNoError = true;
+	
+	if(vLength < 1001)//THIS IS NOT A MISTAKE.
+		{memcpy(&(vDirectoryFullPath[0]), pDirectoryFullPath, vLength + 1);}
+	else
+		{vIsNoError = false;}
 
+	if(vIsNoError && (vDirectoryFullPath[vLength - 1] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR))
+		{vIsNoError = false;}
+	
+	if(vIsNoError)
+	{
+		size_t tCurrentIndex = vLength - 1;
+
+		while(vFileFullPath[vCurrentIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR)
+			{vCurrentIndex++;}
+		
+		if(tCurrentIndex != vCurrentIndex)
+		{
+			while(tCurrentIndex != vCurrentIndex)
+			{
+				bool tIsToBreak = false;
+
+				vFileFullPath[tCurrentIndex] = 0;
+
+				if(crx_c_os_fileSystem_rawDoesEntityExists(&(vFileFullPath[0])))
+				{
+					vFileFullPath[tCurrentIndex] = CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR;
+					vExclusiveEndIndexOfExistingPath = tCurrentIndex;
+					
+					tIsToBreak = true;
+				}
+				else
+				{
+					vFileFullPath[tCurrentIndex] = CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR;
+					tCurrentIndex = tCurrentIndex - 1;
+				}
+
+				if(!tIsToBreak)
+				{
+					while((vFileFullPath[tCurrentIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR) &&
+							(tCurrentIndex > vCurrentIndex))
+						{tCurrentIndex--;}
+				}
+				else
+					{break;}
+			}
+			
+			if(vExclusiveEndIndexOfExistingPath < vCurrentIndex)
+				{vExclusiveEndIndexOfExistingPath = vCurrentIndex;}
+		}
+		else
+			{vExclusiveEndIndexOfExistingPath = vLength;} //PATH PREFIX ALWAYS EXISTS OR A CONTRADICTION
+	}
+
+	if(vIsNoError && (vExclusiveEndIndexOfExistingPath < vLength))
+	{
+		bool tIsFirstTime = true;
+		size_t tCurrentIndex = vExclusiveEndIndexOfExistingPath;
+		size_t tCurrentEndIndex = tCurrentIndex + 1;
+		
+		while((vFileFullPath[tCurrentEndIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR) &&
+				(tCurrentEndIndex < vLength))
+			{tCurrentEndIndex++;}
+
+		while(vIsNoError && (tCurrentEndIndex != vLength))
+		{
+			vFileFullPath[tCurrentEndIndex] = 0;
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+			crx_c_os_fileSystem_internal_posix_rawMkdir(&(vFileFullPath[0]), 0777);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+			crx_c_os_fileSystem_private_win32_rawDoCreateDirectory(&(vFileFullPath[0]), NULL, NULL);
+#endif
+
+			vFileFullPath[tCurrentEndIndex] = CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR;
+			
+			while((vFileFullPath[tCurrentEndIndex] != CRX__OS__FILE_SYSTEM__SEPERATOR_CHAR) &&
+					(tCurrentEndIndex < vLength))
+				{tCurrentEndIndex++;}
+		}
+	}
+
+	return vIsNoError;
+}
+
+
+
+bool crx_c_os_fileSystem_close(Crx_C_Os_FileSystem_OsFileHandle * pOsFileHandle)
+{
+	CRX_SCOPE_META
+	if((pOsFileHandle == NULL) || (pOsFileHandle == CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE))
+		{return true;}
+
+	CRX_SCOPE
+	bool vReturn = true;
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	vReturn = crx_c_os_fileSystem_private_posix_rawClose(pOsFileHandle);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	vReturn = (CloseHandle(pOsFileHandle) == 0);
+#endif
+
+	*pOsFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+	
+	return vReturn;
 	CRX_SCOPE_END
 }
 
-Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_doesFileOrDirectoryExist(
-		Crx_C_String const * CRX_NOT_NULL pFullPath,
-		Crx_C_Os_FileSystem_FileOpenMode pFileOpenMode,
-		Crx_C_Os_FileSystem_FileAccesMode pFileAccesMode,
-		Crx_C_Os_FileSystem_FileShareMode pFileShareMode)
+/*
+	NOTE: THE PARAMETER pInternalFullPath CAN BE USED TO GET THE PATH IN ITS CORRECT CASING.
+	
+	IF THIS FUNCTION RETURNS CRX__C__OS__FILE_SYSTEM__EXISTANCE__NULL, EXISTANCE COULD NOT BE
+			ESTABLISHED. THERE WAS A CRITICAL ERROR.
+	IF THIS FUNCTION DOES NOT RETURN  CRX__C__OS__FILE_SYSTEM__EXISTANCE__NULL, AND 
+			pInternalFullPath IS NOT NULL, THIS FUNCTION MUST STILL RETURN WITH AN EMPTY 
+			pInternalFullPath. THIS HAPPENS IF THERE WAS AN ERROR WHILE ESTABLISHING THE INTERNAL
+			PATH. AS OF THIS WRITING, THIS IS JUST A LOW MEMORY ERROR.
+*/
+Crx_C_Os_FileSystem_Existance crx_c_os_fileSystem_getExistanceOf(
+		Crx_C_String const * CRX_NOT_NULL pFullPath, uint32_t pDepthLimitOfReparsePoints,
+		Crx_C_Os_FileSystem_Contract const * pContract,
+		Crx_C_String * pInternalFullPath)
 {
+	Crx_C_Os_FileSystem_Existance vExistance = CRX__C__OS__FILE_SYSTEM__EXISTANCE__NULL;
+	Crx_C_String vVerifiedPathPrefix /*= ?*/;
+	Crx_C_String vVerifiedRoute /*= ?*/;
+	Crx_C_String vFullPath /*= ?*/;
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	Crx_C_String vRemainingPartialPath /*= ?*/;
+#endif
+	size_t vLengthResidueWhenDirectory = 0;
+	size_t vLengthResidue = 0;
+	bool vIsNoError = true;
+	
+	crx_c_string_construct(&vVerifiedPathPrefix);
+	crx_c_string_construct(&vVerifiedRoute);
+	crx_c_string_construct(&vFullPath);
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	crx_c_string_construct(&vRemainingPartialPath);
+#endif
+
+	if(crx_c_os_fileSystem_verifyFileSystemPath(pContract, 
+			CRX__C__OS__FILE_SYSTEM__OPERATION__READ,
+			pFullPath, pDepthLimitOfReparsePoints, false, 
+			&vVerifiedPathPrefix, &vVerifiedRoute,
+			NULL, &vLengthResidueWhenDirectory, &vLengthResidue, NULL, NULL))
+	{
+		vIsNoError = crx_c_os_fileSystem_verifyFileSystemPath2(pContract, 
+				CRX__C__OS__FILE_SYSTEM__OPERATION__READ, 
+				NULL, pDepthLimitOfReparsePoints, &vExistance, 
+				&vVerifiedPathPrefix, &vVerifiedRoute, NULL);
+	}
+	else
+		{vIsNoError = false;}
+
+	if(pInternalFullPath != NULL)
+	{
+		if(vIsNoError && !crx_c_string_copyAssignFrom(pInternalFullPath, &vVerifiedPathPrefix))
+			{vIsNoError = false;}
+		if(vIsNoError && !crx_c_string_isEqualTo2(&vVerifiedRoute, 
+				CRX__OS__FILE_SYSTEM__SEPERATOR_STRING) && 
+				!crx_c_string_appendString(pInternalFullPath, &vVerifiedRoute))
+			{vIsNoError = false;}
+
+		if(!vIsNoError)
+			{crx_c_string_empty(pInternalFullPath);}
+	}
+
+	crx_c_string_destruct(&vVerifiedPathPrefix);
+	crx_c_string_destruct(&vVerifiedRoute);
+	crx_c_string_destruct(&vFullPath);
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	crx_c_string_destruct(&vRemainingPartialPath);
+#endif
+
+	return vExistance;
 }
-Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_rawDoesFileOrDirectoryExist(
-		char * CRX_NOT_NULL pFullPath, size_t pSize)
+bool crx_c_os_fileSystem_rawDoesEntityExists(char const * CRX_NOT_NULL pFullPath)
 {
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	Crx_NonCrxed_Os_Posix_Dll_Libc_Stat vStat /*= ?*/;
+
+	return crx_c_os_fileSystem_internal_posix_rawStat(pFullPath, &vStat);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	return (crx_c_os_fileSystem_private_win32_rawGetFileAttributes(pFullPath) != 
+		INVALID_FILE_ATTRIBUTES);
+#endif
 }
 
 /*
@@ -6160,7 +10495,7 @@ bool crx_c_os_fileSystem_setModificationDate__do(Crx_C_String const * CRX_NOT_NU
 					&tExistance, &vVerifiedPathPrefix, &vVerifiedRoute, NULL))
 			{
 				vIsNoError = crx_c_string_appendCString(&vFullPath, &vVerifiedPathPrefix);
-				if(!vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedRoute))
+				if(vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedRoute))
 					{vIsNoError = false;}
 			}
 		}
@@ -6434,7 +10769,7 @@ bool crx_c_os_fileSystem_getModificationDate__do(Crx_C_Os_FileSystem_Time * CRX_
 					&tExistance, &vVerifiedPathPrefix, &vVerifiedRoute, NULL))
 			{
 				vIsNoError = crx_c_string_appendCString(&vFullPath, &vVerifiedPathPrefix);
-				if(!vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedRoute))
+				if(vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedRoute))
 					{vIsNoError = false;}
 			}
 		}
@@ -6480,7 +10815,7 @@ bool crx_c_os_fileSystem_getModificationDate__do(Crx_C_Os_FileSystem_Time * CRX_
 			else
 			{
 				if(crx_c_os_fileSystem_internal_posix_replaceOpenat(&vFileHandle,
-						crx_c_string_getCString(&vRemainingPartialPath), O_WRONLY, 0))
+						crx_c_string_getCString(&vRemainingPartialPath), O_RDONLY, 0))
 					{vIsNoError = crx_c_os_fileSystem_private_posix_flock(&vFileHandle, LOCK_SH);}
 				else
 					{vIsNoError = false;}
@@ -6543,7 +10878,7 @@ bool crx_c_os_fileSystem_getModificationDate__do(Crx_C_Os_FileSystem_Time * CRX_
 				NULL, NULL, NULL, NULL, &tFileSystemName))
 		{
 			tHandle = crx_c_os_fileSystem_private_win32_createFile(false, &vFullPath, 
-					GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0,
+					GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0,
 					NULL);
 		}
 				
@@ -6659,6 +10994,179 @@ bool crx_c_os_fileSystem_getModificationDate__do(Crx_C_Os_FileSystem_Time * CRX_
 	CRX_SCOPE_END
 }
 
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_getFileSize(uint64_t * CRX_NOT_NULL pReturn,
+		Crx_C_String const * CRX_NOT_NULL pFullPath, uint32_t pDepthLimitOfReparsePoints,  
+		Crx_C_Os_FileSystem_Contract const * CRX_NOT_NULL pContract)
+{
+	return crx_c_os_fileSystem_getFileSize__do(pReturn, pFullPath, 
+			pDepthLimitOfReparsePoints, NULL, pContract);
+}
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_getFileSize2(uint64_t * CRX_NOT_NULL pReturn,
+		Crx_C_Os_FileSystem_Iterator_Record const * CRX_NOT_NULL pRecord)
+{
+	return crx_c_os_fileSystem_getFileSize__do(pReturn,
+			crx_c_os_fileSystem_iterator_record_getInternalFullPath(pRecord), 0, pRecord, NULL);
+}
+bool crx_c_os_fileSystem_getFileSize__do(Crx_C_Os_FileSystem_Time * CRX_NOT_NULL pReturn,
+		Crx_C_String const * CRX_NOT_NULL pFullPath,
+		uint32_t pDepthLimitOfReparsePoints, 
+		Crx_C_Os_FileSystem_Iterator_Record * pRecord,
+		Crx_C_Os_FileSystem_Contract const * pContract)
+{
+	CRX_SCOPE_META
+	assert((pRecord == NULL) || CRX__ARE_POINTERS_TO_SAME_OBJECT(pFullPath,
+			crx_c_os_fileSystem_iterator_record_getInternalFullPath(pRecord), true));
+	assert((pRecord == NULL) || (pContract != NULL));
+
+	CRX_SCOPE
+	Crx_C_String vVerifiedPathPrefix /*= ?*/;
+	Crx_C_String vVerifiedRoute /*= ?*/;
+	Crx_C_String vFullPath /*= ?*/;
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	Crx_C_String vRemainingPartialPath /*= ?*/;
+	Crx_C_Os_FileSystem_Internal_Posix_FileHandle vFileHandle /*= ?*/;
+#endif
+	size_t vLengthResidueWhenDirectory = 0;
+	size_t vLengthResidue = 0;
+	uint64_t vFileSize = 0;
+	bool vIsNoError = true;
+	
+	crx_c_string_construct(&vVerifiedPathPrefix);
+	crx_c_string_construct(&vVerifiedRoute);
+	crx_c_string_construct(&vFullPath);
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	crx_c_string_construct(&vRemainingPartialPath);
+	crx_c_os_fileSystem_internal_posix_fileHandle_construct(&vFileHandle);
+#endif
+
+	if(pRecord == NULL)
+	{
+		if(crx_c_os_fileSystem_verifyFileSystemPath(
+				pContract, CRX__C__OS__FILE_SYSTEM__OPERATION__READ,
+				pFullPath, pDepthLimitOfReparsePointsOfNewFullPath, false,
+				&vVerifiedPathPrefix, &vVerifiedRoute,
+				NULL, &vLengthResidueWhenDirectory, &vLengthResidue, NULL, NULL))
+		{
+			Crx_C_Os_FileSystem_Existance tExistance = CRX__C__OS__FILE_SYSTEM__EXISTANCE__NULL;
+				
+			if(crx_c_os_fileSystem_verifyFileSystemPath2(pContract, 
+					CRX__C__OS__FILE_SYSTEM__OPERATION__READ, NULL, pDepthLimitOfReparsePoints, 
+					&tExistance, &vVerifiedPathPrefix, &vVerifiedRoute, NULL))
+			{
+				vIsNoError = crx_c_string_appendCString(&vFullPath, &vVerifiedPathPrefix);
+				if(vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedRoute))
+					{vIsNoError = false;}
+			}
+		}
+		else
+			{vIsNoError = false;}
+	}
+	
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+	(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	if(vIsNoError && !crx_c_os_fileSystem_internal_posix_lookAt2(&vFileHandle,
+			&vFullPath, &vRemainingPartialPath))
+		{vIsNoError = false;}
+#endif
+	
+	
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	if(vIsNoError)
+	{
+		Crx_NonCrxed_Os_Posix_Dll_Libc_Stat tStat;
+		
+		CRX__SET_TO_ZERO(Crx_NonCrxed_Os_Posix_Dll_Libc_Stat, tStat);
+		
+		if(pRecord == NULL)
+		{
+			vIsNoError = crx_c_os_fileSystem_internal_posix_fstatat(&vFileHandle,
+					crx_c_string_getCString(&vRemainingPartialPath), &tStat, false);
+		}
+		else
+		{
+			if(!crx_c_os_fileSystem_internal_posix_replaceOpenat(&vFileHandle,
+					crx_c_string_getCString(&vRemainingPartialPath), O_RDONLY, 0))
+				{vIsNoError = false;}
+			if(vIsNoError && !crx_c_os_fileSystem_iterator_verifyRecordAgainst(pRecord,
+					vFileHandle->gFileDescriptor))
+				{vIsNoError = false;}
+
+			if(vIsNoError && !crx_c_os_fileSystem_internal_posix_fstat(&vFileHandle, &tStat))
+				{vIsNoError = false;}
+		}
+
+		if(vIsNoError)
+			{vFileSize = ((uint64_t)(tStat.st_size > 0 ? tStat.st_size : 0));}
+
+		crx_c_os_fileSystem_internal_posix_close(&vFileHandle);
+	}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	if(vIsNoError)
+	{
+		ULARGE_INTEGER tULargeInteger;
+		BY_HANDLE_FILE_INFORMATION tByHandleFileInformation /*= ?*/;
+
+		if(pRecord == NULL)
+		{
+			vIsNoError = crx_c_os_fileSystem_private_win32_getFileInformation(
+					false, &vFullPath, crx_c_string_isEndingWith2(&vFullPath, 
+					CRX__OS__FILE_SYSTEM__SEPERATOR_STRING), &tByHandleFileInformation);
+		}
+		else
+		{
+			HANDLE tHandle = crx_c_os_fileSystem_private_win32_createFile(false, &vFullPath,
+					GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0,
+					NULL);
+
+			if(tHandle != INVALID_HANDLE_VALUE)
+			{
+				if(crx_c_os_fileSystem_iterator_verifyRecordAgainst(pRecord, tHandle))
+				{
+					vIsNoError = (crx_c_os_fileSystem_internal_win32_getFileInformationByHandle(
+							tHandle, &tByHandleFileInformation) != 0);
+				}
+				else
+					{vIsNoError = false;}
+
+				CloseHandle(tHandle);
+				tHandle = INVALID_HANDLE_VALUE;
+			}
+			else
+				{vIsNoError = false;}
+		}
+
+		if(vIsNoError)
+		{				
+			tULargeInteger.u.HighPart = tByHandleFileInformation.nFileSizeHigh;
+			tULargeInteger.u.LowPart = tByHandleFileInformation.nFileSizeLow;
+			
+			vFileSize = tULargeInteger.QuadPart;
+		}
+	}
+#endif
+
+	crx_c_string_destruct(&vVerifiedPathPrefix);
+	crx_c_string_destruct(&vVerifiedRoute);
+	crx_c_string_destruct(&vFullPath);
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	crx_c_os_fileSystem_internal_posix_fileHandle_destruct(&vFileHandle);
+	crx_c_string_destruct(&vRemainingPartialPath);
+#endif
+
+	return vFileSize;
+
+	CRX_SCOPE_END
+}
+
 /*
 	WARNING: IF THIS RETURNS true, THE ENTITY MAY OR MAY NOT HAVE BEEN UNLIKNED. THIS RETURNS
 			FALSE IF NO ATTEMPT TO UNLINK WAS MADE. THIS HAPPENS IF THE ENTITY IS OPEN, AND 
@@ -6724,7 +11232,7 @@ bool crx_c_os_fileSystem_unlink(Crx_C_String const * CRX_NOT_NULL pFullPath,
 			if(tExistance == CRX__C__OS__FILE_SYSTEM__EXISTANCE__EXISTS)
 			{
 				vIsNoError = crx_c_string_appendCString(&vFullPath, &vVerifiedPathPrefix);
-				if(!vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedRoute))
+				if(vIsNoError && !crx_c_string_appendCString(&vFullPath, &vVerifiedRoute))
 					{vIsNoError = false;}
 			}
 			else if(tExistance != CRX__C__OS__FILE_SYSTEM__EXISTANCE__DOES_NOT_EXIST)
@@ -7302,16 +11810,13 @@ bool crx_c_os_fileSystem_rename2(Crx_C_Os_FileSystem_Iterator_Record * CRX_NOT_N
 			&vNewEntityName) != 0))
 		{vIsNoError = false;}
 
-	crx_c_string_destruct(&vVerifiedPathPrefix);
-	crx_c_string_destruct(&vVerifiedRoute);
-	crx_c_string_destruct(&vFullPath);
+	crx_c_string_destruct(&vTargetFullPath);
 	crx_c_string_destruct(&vEntityName);
 	crx_c_string_destruct(&vNewEntityName);
 	crx_c_string_destruct(&vTemporaryName);
 
 	return vIsNoError;
 }
-
 
 /*
 	NOTE: IF AN ERROR IS ENCOUNTERED, THIS FUNCTION RETURNS false ALSO. IN OTHER WORDS, AN ERROR
@@ -7532,6 +12037,7 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse2(Crx_C_String * CRX_NOT_NULL 
 	uint32_t vSituation = crx_c_os_fileSystem_internal_isEntityNotInUse__getSituation();
 	bool vIsADirectory = crx_c_string_isEndingWith2(pVerifiedFullPath, 
 			CRX__OS__FILE_SYSTEM__SEPERATOR_STRING);
+	Crx_C_String vVerifiedFullPath /*= ?*/;
 	bool vIsToDoFirstCheckForOpen = false;
 	bool vIsToDoSecondCheckForOpen = false;
 	bool vIsToDoCheckForContractOnSources = false;
@@ -7539,9 +12045,11 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse2(Crx_C_String * CRX_NOT_NULL 
 	Crx_C_Os_FileSystem_Contract vContract /*= ?*/;
 	bool vReturn = true;
 
+	crx_c_string_copyConstruct(&vVerifiedFullPath, pVerifiedFullPath);
 	CRX__SET_TO_ZERO(Crx_C_Os_FileSystem_Contract, tContract);
-	
+
 	crx_c_string_empty(pReturn);
+	vReturn = (crx_c_string_getSize(&vVerifiedFullPath) == crx_c_string_getSize(pVerifiedFullPath));
 	
 	if(pContract != NULL)
 	{
@@ -7589,7 +12097,7 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse2(Crx_C_String * CRX_NOT_NULL 
 		}
 	}
 
-	if(vIsToDoFirstCheckForOpen)
+	if(vReturn && vIsToDoFirstCheckForOpen)
 	{
 		CRX_SCOPE_META
 		assert(vIsToDoSecondCheckForOpen);
@@ -7606,7 +12114,7 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse2(Crx_C_String * CRX_NOT_NULL 
 		tContract.gResolutionModel = CRX__C__OS__FILE_SYSTEM__RESOLUTION_MODEL__PRECISE;
 
 		//WE WANT TO CHECK FOR ONLY 'OPEN' AT THIS POINT.
-		vReturn = crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck(pVerifiedFullPath,
+		vReturn = crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck(&vVerifiedFullPath,
 				NULL, 0, 0, pContract, false, false);
 		CRX_SCOPE_END
 	}
@@ -7763,7 +12271,7 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse2(Crx_C_String * CRX_NOT_NULL 
 			tContract.gResolutionModel = CRX__C__OS__FILE_SYSTEM__RESOLUTION_MODEL__PRECISE;
 		}
 
-		vReturn = crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck(pVerifiedFullPath,
+		vReturn = crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck(&vVerifiedFullPath,
 				pTarget_verifiedDirectoryFullPath, pTarget_lengthResidueWhenDirectory, 
 				pTarget_lengthResidue, &tContract, !vIsToDoSecondCheckForOpen,
 				vIsToDoCheckForContractOnSources);
@@ -7783,7 +12291,7 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse2(Crx_C_String * CRX_NOT_NULL 
 			UNDER A READ OPERATION.
 */
 bool crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck(
-		Crx_C_String const * CRX_NOT_NULL pVerifiedFullPath,
+		Crx_C_String * CRX_NOT_NULL pVerifiedFullPath,
 		Crx_C_String const * pTarget_verifiedDirectoryFullPath, 
 		size_t pTarget_lengthResidueWhenDirectory, size_t pTarget_lengthResidue, 
 		Crx_C_Os_FileSystem_Contract const * CRX_NOT_NULL pContract,
@@ -7987,7 +12495,7 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck(
 										pContract, CRX__C__OS__FILE_SYSTEM__OPERATION__WRITE,
 										&tFilePartialPath, 0, false, &tVerifiedPathPrefix, 
 										&tVerifiedRoute, NULL, &tTarget_LengthResidueWhenDirectory, 
-										&tTarget_LengthResidue, NULL, NULL)
+										&tTarget_LengthResidue, NULL, NULL))
 									{vReturn = false;}
 
 								if(vReturn && !crx_c_string_appendString(&tCurrentFullPath,
@@ -8024,8 +12532,8 @@ bool crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck(
 		crx_c_os_fileSystem_iterator_destruct(&tIterator);
 	}
 }
-crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck__checkIfFileIsOpen(
-		Crx_C_String const * pFullFilePath)
+bool crx_c_os_fileSystem_internal_isEntityNotInUse__doCheck__checkIfFileIsOpen(
+		Crx_C_String * CRX_NOT_NULL pFullFilePath)
 {
 #if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
 		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
@@ -8307,6 +12815,56 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_move(
 	crx_c_string_destruct(&vVerifiedRoute);
 }
 
+bool crx_c_os_fileSystem_lockByFile(
+		Crx_C_Os_FileSystem_OsFileHandle * CRX_NOT_NULL pReturn,
+		Crx_C_String const * CRX_NOT_NULL pFileFullPath, 
+		uint32_t pDepthLimitOfReparsePointsOfFullPath,
+		Crx_C_Os_FileSystem_Contract const * CRX_NOT_NULL pContract)
+{
+	Crx_C_Os_FileSystem_OsFileHandle vOsFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+	Crx_C_String vString /*= ?*/;
+
+	crx_c_string_construct(&vString);
+
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	vOsFileHandle = crx_c_os_fileSystem_internal_doOpen(pFileFullPath, 
+			pDepthLimitOfReparsePoints, NULL, CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE,
+			CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL,
+			CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE, pContract, false, &vString);
+	//still need to write.		
+	
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	vOsFileHandle = crx_c_os_fileSystem_internal_doOpen(pFileFullPath, pDepthLimitOfReparsePoints, 
+			NULL, CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN,
+			CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL,
+			CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE, pContract, true, &vString);
+#endif
+
+	if(vOsFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE)
+		{crx_c_os_fileSystem_byFileKey_internal_set(pReturn, vOsFileHandle, &vString)}
+				
+	crx_c_string_destruct(&vString);
+	
+	return (vOsFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE);
+}
+void crx_c_os_fileSystem_unlockByFile(Crx_C_Os_FileSystem_OsFileHandle pOsFileHandle)
+{
+#if((CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD) || \
+		(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS))
+	return crx_c_os_fileSystem_internal_doOpen(pFileFullPath, pDepthLimitOfReparsePoints, NULL,
+			CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__CREATE,
+			CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL,
+			CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE, pContract, false);
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__WINDOWS)
+	return crx_c_os_fileSystem_internal_doOpen(pFileFullPath, pDepthLimitOfReparsePoints, NULL,
+			CRX__C__OS__FILE_SYSTEM__FILE_OPEN_MODE__FORCE_OPEN,
+			CRX__C__OS__FILE_SYSTEM__FILE_ACCESS_MODE__NORMAL,
+			CRX__C__OS__FILE_SYSTEM__FILE_SHARE_MODE__EXCLUSIVE, pContract, true);
+#endif
+}
 
 /*
 THIS FUNCTION SHOULD BE USED TO GET DEEP PATH ON SYSTEMS THAT SUPPORT "at" FUNCTIONS. THE FUNCTION
@@ -8409,12 +12967,12 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_private_posix_lookAt(
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
 		//LINUX EXPOSED A DIFFERENT SYMBOL IN THE PAST, __fxstatat, AND VERSIONED IT.
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 2, 4, 0, 0, 0);
-		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 0, 0, 0, 0);
+		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 2, 5, 0, 0);
 		if(crx_c_os_dll_loadSystemFunction("__fxstatat", 2, 4, 0, 0, 0) != NULL)
 			{vFunc_fstatat = &crx_c_os_fileSystem_private_posix_linux_fstatat;}
 		else
 			{vFunc_fstatat = NULL;}
-		vFunc_close = crx_c_os_dll_loadSystemFunction("close", 2, 0, 0, 0, 0);
+		vFunc_close = crx_c_os_dll_loadSystemFunction("close", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 1, 1, 0, 0, 0);
 		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 1, 0, 0, 0, 0);
@@ -8480,7 +13038,8 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_private_posix_lookAt(
 
 						if(tIsFirst)
 						{
-							tFileDescriptor = (*vFunc_open)(tChars, 0);
+							tFileDescriptor = (*vFunc_open)(tChars, 
+									crx_c_os_fileSystem_internal_posix_amendOpenatFlags(0));
 
 							if(tFileDescriptor < 0)
 							{
@@ -8495,7 +13054,8 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_private_posix_lookAt(
 						}
 						else
 						{
-							int tFileDescriptor2 = (*vFunc_openat)(tFileDescriptor, tChars, 0);
+							int tFileDescriptor2 = (*vFunc_openat)(tFileDescriptor, tChars, 
+									crx_c_os_fileSystem_internal_posix_amendOpenatFlags(0));
 							
 							(*vFunc_close)(tFileDescriptor);
 							
@@ -8568,7 +13128,8 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_private_posix_lookAt(
 	{
 		crx_c_string_append(pRemainingPath, pFullPath);
 
-		return -1; /*return (*vFunc_open)(filename, mode);*/
+		return -1; /*return (*vFunc_open)(filename, 
+				crx_c_os_fileSystem_internal_posix_amendOpenatFlags(mode));*/
 	}
 }
 #endif
@@ -8597,7 +13158,7 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_private_posix_linux_stat(
 		char const * pathname, Crx_NonCrxed_Os_Posix_Dll_Libc_Stat * buf)
 {
 	static Crx_NonCrxed_Os_Posix_Dll_Libc_StatFunc vFunc_stat = 
-			crx_c_os_dll_loadSystemFunction("__xstat", 2, 0, 0, 0, 0);
+			crx_c_os_dll_loadSystemFunction("__xstat", 2, 2, 5, 0, 0);
 
 	#if defined (__aarch64__)
 		#define _STAT_VER 0
@@ -8614,7 +13175,7 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_private_posix_linux_lstat(
 		char const * pathname, Crx_NonCrxed_Os_Posix_Dll_Libc_Stat * buf)
 {
 	static Crx_NonCrxed_Os_Posix_Dll_Libc_Lstat vFunc_lstat = 
-			crx_c_os_dll_loadSystemFunction("__lxstat", 2, 0, 0, 0, 0);
+			crx_c_os_dll_loadSystemFunction("__lxstat", 2, 2, 5, 0, 0);
 
 	#if defined (__aarch64__)
 		#define _STAT_VER 0
@@ -8631,7 +13192,7 @@ Crx_C_Os_FileSystem_OsFileHandle crx_c_os_fileSystem_private_posix_linux_fstat(
 		int32_t dirfd, Crx_NonCrxed_Os_Posix_Dll_Libc_Stat * buf)
 {
 	static Crx_NonCrxed_Os_Posix_Dll_Libc_Fstat vFunc_fxstat = 
-			crx_c_os_dll_loadSystemFunction("__fxstat", 2, 0, 0, 0, 0);
+			crx_c_os_dll_loadSystemFunction("__fxstat", 2, 2, 5, 0, 0);
 
 	#if defined (__aarch64__)
 		//#define _STAT_VER 0
@@ -9781,104 +14342,12 @@ int32_t crx_c_os_fileSystem_computeMountPointsIfApplicable__computeTimeOffset2()
 	
 	crx_c_os_fileSystem_private_posix_localtimeR(&vTime, &vTm);
 
-	//"tm_gmtoff" EXISTS ON MACOS 10.8, AND IS A LONG (INT64). I ASSUMING THAT I DO NOT NEED TO
+	//"tm_gmtoff" EXISTS ON MACOS 10.7, AND IS A LONG (INT64). I ASSUMING THAT I DO NOT NEED TO
 	//		ADDRESS THE "tm_isdst" MEMBER
 	return ((int32_t)vTm.tm_gmtoff);
 }
 #endif
 
-
-void crx_c_os_fileSystem_iterate(Crx_C_String * pFullPath)
-{
-#if(...linux, MACOS >= 10.8(other sources suggest 10.7), freebsd)
-	Crx_NonCrxed_Os_Posix_Dll_Libc_Dirent *entry;
-    DIR *dp;
-
-    dp = opendir(path); //THIS IS CRITICAL IF NOT FOUND IN MACOS 10.7
-
-    if(dp == NULL)
-	{
-        perror("opendir: Path does not exist or could not be read.");
-        return -1;
-    }
-
-    while ((entry = crx_c_os_fileSystem_internal_posix_readdir(dp)))
-        puts(entry->d_name);
-
-    Crx_NonCrxed_Os_Posix_Dll_Libc_Closedir(dp);
-    return 0;
-#elif(windows)
-	/*
-		THE FOLLOWING SKETCH CODE RELIS ON FindFirstFileA AND OTHERS, WHICH ALSO ITERATE OVER
-				SHORT NAMES IN FAT.
-	*/
-	WIN32_FIND_DATA ffd;
-	LARGE_INTEGER filesize;
-	TCHAR szDir[MAX_PATH];
-	size_t length_of_arg;
-	HANDLE hFind = INVALID_HANDLE_VALUE;
-	DWORD dwError=0;
-
-	// Check that the input path plus 3 is not longer than MAX_PATH.
-	// Three characters are for the "\*" plus NULL appended below.
-
-	StringCchLength(argv[1], MAX_PATH, &length_of_arg);
-
-	if(crx_c_string_getSize(pFullPath) > (MAX_PATH - 3))
-	{
-		//_tprintf(TEXT("\nDirectory path is too long.\n"));
-		return false;
-	}
-
-	// Prepare string for use with FindFile functions.  First, copy the
-	// string to a buffer, then append '\*' to the directory name.
-	
-	Crx_C_String vString;
-	
-	crx_c_string_copyConstruct(&vString, vString);
-	crx_c_string_appendChars(&vString, "\\*");
-
-	hFind = FindFirstFileA(crx_c_string_getCString(&vString), &ffd);
-
-	if(hFind != INVALID_HANDLE_VALUE) 
-	{
-		bool tIsValid = true;
-		
-		while(vIsValid)
-		{
-			if((strcmp(ffd.cFileName, ".") != 0) && 
-					(strcmp(ffd.cFileName, "..") != 0))
-			{
-				if(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				{
-					_tprintf(TEXT("  %s   <DIR>\n"), ffd.cFileName);
-				}
-				else
-				{
-					filesize.LowPart = ffd.nFileSizeLow;
-					filesize.HighPart = ffd.nFileSizeHigh;
-					_tprintf(TEXT("  %s   %ld bytes\n"), ffd.cFileName, filesize.QuadPart);
-				}
-			}
-			
-			tIsValid = (FindNextFileA(hFind, &ffd) != 0);
-		}
-
-		if(GetLastError() != ERROR_NO_MORE_FILES) 
-		{
-			FindClose(hFind);
-
-			return false;
-		}
-		else
-		{
-			FindClose(hFind);
-			
-			return true;
-		}
-	}
-#endif
-}
 
 //IF YOU END UP USING THIS FUNCTION, REMEMBER THAT WINDOWS IMPLEMENTATION IS NOT DONE.(TODO)
 CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_areOsFileHandlesToSameEntity(
@@ -9909,22 +14378,56 @@ CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_areOsFileHandlesToSameEnt
 
 
 CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_internal_posix_fileHandle_construct(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * pThis)
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * pThis)
 {
 	pThis->gFileDescriptor = -1;
 	crx_c_string_construct(&(pThis->gFullPath));
 }
 		
 CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_internal_posix_fileHandle_destruct(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * pThis)
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * pThis)
 {
 	pThis->gFileDescriptor = -1;
 	crx_c_string_destruct(&(pThis->gFullPath));
 }
 
+CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_internal_posix_amendOpenatFlags(
+		int32_t pFlags)
+{
+	static int32_t vFlags = 0;
+	static bool vIsSet = false;
+	
+	if(!vIsSet)
+	{
+		Crx_C_Os_Info_OsInformation tOsInformation /*= ?*/;
+
+		CRX__SET_TO_ZERO(Crx_C_Os_Info_OsInformation, tOsInformation);
+	
+		crx_c_os_info_internal_bestGuessGetOsInformation(&tOsInformation, true);
+
+#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		if((tOsInformation.gMajorVersion > 2) || ((tOsInformation.gMajorVersion == 2) &&
+				(tOsInformation.gMinorVersion >= 23)))
+			{vFlags = CRX__C__OS__FILE_SYSTEM__O__CLOEXEC;}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		if((tOsInformation.gMajorVersion > 8) || ((tOsInformation.gMajorVersion == 8) &&
+				(tOsInformation.gMinorVersion > 2)))
+			{vFlags = CRX__C__OS__FILE_SYSTEM__O__CLOEXEC;}
+#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+	//ON MACOS, SUPPORT IS LIKELY AT LEAST SINCE MACOS 10.8 IF NOT BEFORE.
+		if((tOsInformation.gMajorVersion > 10) || ((tOsInformation.gMajorVersion == 10) &&
+				(tOsInformation.gMinorVersion >= 10)))
+			{vFlags = CRX__C__OS__FILE_SYSTEM__O__CLOEXEC;}
+#endif
+
+		vIsSet = true;
+	}
+
+	return (pFlags | vFlags);
+}
 
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pReturn,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pReturn,
 		Crx_C_String const * CRX_NOT_NULL pFullPath,
 		Crx_C_String * CRX_NOT_NULL pRemainingPartialPath)
 {
@@ -9977,12 +14480,12 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
 		//LINUX EXPOSED A DIFFERENT SYMBOL IN THE PAST, __fxstatat, AND VERSIONED IT.
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 2, 4, 0, 0, 0);
-		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 0, 0, 0, 0);
+		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 2, 5, 0, 0);
 		if(crx_c_os_dll_loadSystemFunction("__fxstatat", 2, 4, 0, 0, 0) != NULL)
 			{vFunc_fstatat = &crx_c_os_fileSystem_private_posix_linux_fstatat;}
 		else
 			{vFunc_fstatat = NULL;}
-		vFunc_close = crx_c_os_dll_loadSystemFunction("close", 2, 0, 0, 0, 0);
+		vFunc_close = crx_c_os_dll_loadSystemFunction("close", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 1, 1, 0, 0, 0);
 		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 1, 0, 0, 0, 0);
@@ -10034,7 +14537,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 				if(tLastChar == tChars)
 				{
 					pReturn->gFileDescriptor = (*vFunc_open)('/',
-							O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/);
+							crx_c_os_fileSystem_internal_posix_amendOpenatFlags(
+							O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/));
 
 					if(pReturn->gFileDescriptor < 0)
 						{vErrorCode = errno;}
@@ -10059,7 +14563,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 				if(tChars2 == tChars)
 				{
 					pReturn->gFileDescriptor = (*vFunc_open)('/',
-							O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/);
+							crx_c_os_fileSystem_internal_posix_amendOpenatFlags(
+							O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/));
 
 					if(pReturn->gFileDescriptor < 0)
 						{vErrorCode = errno;}
@@ -10109,7 +14614,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 
 								if(tIsFirst)
 								{
-									tFileDescriptor = (*vFunc_open)(tChars, 0);
+									tFileDescriptor = (*vFunc_open)(tChars, 
+											crx_c_os_fileSystem_internal_posix_amendOpenatFlags(0));
 
 									if(tFileDescriptor < 0)
 									{
@@ -10124,7 +14630,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 								else
 								{
 									int tFileDescriptor2 = (*vFunc_openat)(tFileDescriptor, 
-											tChars, 0);
+											tChars, 
+											crx_c_os_fileSystem_internal_posix_amendOpenatFlags(0));
 									
 									if(tFileDescriptor2 < 0)
 									{
@@ -10161,7 +14668,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 							assert(tRemainingLength > 1);
 
 							pReturn->gFileDescriptor = (*vFunc_openat)(tFileDescriptor, 
-									tChars, 0);
+									tChars, 
+									crx_c_os_fileSystem_internal_posix_amendOpenatFlags(0));
 							
 							if(pReturn->gFileDescriptor < 0)
 								{vErrorCode = errno;}
@@ -10194,7 +14702,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 								PATH MIGHT GIVE NOT AN ERROR, BUT THAT IS NOT RELEVANT HERE.
 					*/
 					pReturn->gFileDescriptor = (*vFunc_open)(tChars, 
-							O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/);
+							crx_c_os_fileSystem_internal_posix_amendOpenatFlags(
+							O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/));
 
 					if(pReturn->gFileDescriptor < 0)
 						{vErrorCode = errno;}
@@ -10227,7 +14736,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_lookAt2(
 }
 //NOTE: "And" HERE DOES NOT INDICATE ORDER.
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_verifyFileSystemPathToOs2AndOpen(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
 		Crx_C_String * CRX_NOT_NULL pFullPath, Crx_C_Os_FileSystem_Contract const * pContract, 
 		Crx_C_Os_FileSystem_Operation pOperation, uint32_t pDepthLimitOfReparsePoints, 
 		Crx_C_Os_FileSystem_Existance * CRX_NOT_NULL pExistance,
@@ -10331,9 +14840,12 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_verifyFil
 	return vIsNoError;
 }
 
+/*
+	UNLIKE THE NATIVE SYSTEM FUNCTION, THIS FUNCTION AUTOMATICALLY SETS THE O_CLOEXEC IF AVAILABLE.
+*/
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_openat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pReturn,
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle const * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pReturn,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle const * CRX_NOT_NULL pFileHandle,
 		char const * pPartialPath, int32_t pFlags, uint32_t pMode /*mode_t*/)
 {
 	static bool vIsSet = false;
@@ -10349,7 +14861,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_openat(
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
 		//LINUX EXPOSED A DIFFERENT SYMBOL IN THE PAST, __fxstatat, AND VERSIONED IT.
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 2, 4, 0, 0, 0);
-		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 0, 0, 0, 0);
+		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 1, 1, 0, 0, 0);
 		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 1, 0, 0, 0, 0);
@@ -10371,7 +14883,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_openat(
 			if(!vIsPartialPathEmpty)
 			{
 				pReturn->gFileDescriptor = (*vFunc_openat)(pFileHandle->gFileDescriptor, 
-						pPartialPath, pFlags, ((mode_t)pMode));
+						pPartialPath, crx_c_os_fileSystem_internal_posix_amendOpenatFlags(pFlags), 
+						((mode_t)pMode));
 						
 				if(pReturn->gFileDescriptor == -1)
 					{vErrorCode = errno;}				
@@ -10411,7 +14924,9 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_openat(
 			if(crx_c_string_getSize(&(pReturn->gFullPath)) < PATH_MAX)
 			{
 				pReturn->gFileDescriptor = (*vFunc_open)(crx_c_string_getCString(
-						&(pReturn->gFullPath)), pFlags, ((mode_t)pMode));
+						&(pReturn->gFullPath)), 
+						crx_c_os_fileSystem_internal_posix_amendOpenatFlags(pFlags), 
+						((mode_t)pMode));
 
 				if(pReturn->gFileDescriptor == -1)
 					{vErrorCode = errno;}
@@ -10437,13 +14952,12 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_openat(
 	else
 		{return true;}
 }
-
 /*
 THIS FUNCTION WILL CLOSE THE CURRENT FILE HANDLE, AND OPEN A NEW FILE AND ASSIGN FILE HANDLE THE
 NEW VALUE. IF OPENING THE NEW FILE FAILS, THE OLD HANDLE IS NOT CHANGED, NOT CLOSED.
 */
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_replaceOpenat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle const * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle const * CRX_NOT_NULL pFileHandle,
 		char const * pPath, int32_t pFlags, uint32_t pMode /*mode_t*/)
 {
 	static bool vIsSet = false;
@@ -10460,7 +14974,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_replaceOp
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
 		//LINUX EXPOSED A DIFFERENT SYMBOL IN THE PAST, __fxstatat, AND VERSIONED IT.
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 2, 4, 0, 0, 0);
-		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 0, 0, 0, 0);
+		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_openat = crx_c_os_dll_loadSystemFunction("openat", 1, 1, 0, 0, 0);
 		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 1, 0, 0, 0, 0);
@@ -10479,7 +14993,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_replaceOp
 			if(!vIsPartialPathEmpty)
 			{
 				vFileDescriptor = (*vFunc_openat)(pFileHandle->gFileDescriptor, pPartialPath,
-						pFlags, ((mode_t)pMode));
+						crx_c_os_fileSystem_internal_posix_amendOpenatFlags(pFlags), 
+						((mode_t)pMode));
 						
 				if(vFileDescriptor == -1)
 					{vErrorCode = errno;}
@@ -10518,7 +15033,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_replaceOp
 			if(crx_c_string_getSize(&(pFileHandle->gFullPath)) < PATH_MAX)
 			{
 				vFileDescriptor = (*vFunc_open)(crx_c_string_getCString(&(pFileHandle->gFullPath)), 
-						pFlags, ((mode_t)pMode));
+						crx_c_os_fileSystem_internal_posix_amendOpenatFlags(pFlags), 
+						((mode_t)pMode));
 
 				if(vFileDescriptor == -1)
 					{vErrorCode = errno;}
@@ -10553,9 +15069,60 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_replaceOp
 		return true;
 	}
 }
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_rawOpen(
+		int32_t * CRX_NOT_NULL pReturn, char const * pCString, int32_t pFlags, 
+		uint32_t pMode /*mode_t*/)
+{
+	static bool vIsSet = false;
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Open vFunc_open /*= ?*/;
+	int32_t vErrorCode = 0;
+	bool vIsDone = false;
+	
+	*pReturn = -1;
+	
+	if(!vIsSet)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_open = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Open)&open);
+	#endif
+	
+		vIsSet = true;
+	}
+
+	pReturn->gFileDescriptor = -1;
+	crx_c_string_empty(&(pReturn->gFullPath));
+
+	if(!vIsDone)
+	{
+		if(strlen(pCString) < PATH_MAX)
+		{
+			*pReturn = (*vFunc_open)(pCString, crx_c_os_fileSystem_internal_posix_amendOpenatFlags(
+					pFlags), ((mode_t)pMode));
+
+			if(*pReturn == -1)
+				{vErrorCode = errno;}
+		}
+		else
+			{vErrorCode = ENAMETOOLONG;}
+	}
+
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
+}
+
 
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_mkdirat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle const * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle const * CRX_NOT_NULL pFileHandle,
 		char const * pPartialPath, uint32_t pMode /*mode_t*/)
 {
 	static bool vIsSet = false;
@@ -10581,44 +15148,155 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_mkdirat(
 	
 		vIsSet = true;
 	}
+
+	if(pFileHandle->gFileDescriptor != -1)
+	{
+		if(vFunc_mkdirat != NULL)
+		{
+			if((*vFunc_mkdirat)(pFileHandle->gFileDescriptor, 
+					pPartialPath, pFlags, ((mode_t)pMode)) != 0)
+				{vErrorCode = errno;}
+
+			vIsDone = true;
+		}
+		else if(crx_c_string_getSize(&(pFileHandle->gFullPath)) == 0)
+		{
+			vErrorCode = EBADF;
+
+			vIsDone = true;
+		}
+	}
+
+	if(!vIsDone)
+	{
+		bool tIsNoError = true;
+		size_t tLength = crx_c_string_getSize(&(pFileHandle->gFullPath));
+
+		if(tIsNoError && !crx_c_string_isEndingWith2(&(pFileHandle->gFullPath), "/", false))
+		{
+			if(!crx_c_string_appendChar(&(pFileHandle->gFullPath), '/'))
+				{tIsNoError = false;}
+		}
+		if(tIsNoError && !vIsPartialPathEmpty)
+		{
+			if(!crx_c_string_appendCString(&(pFileHandle->gFullPath), pPartialPath))
+				{tIsNoError = false;}
+		}
+
+		if(tIsNoError)
+		{
+			if(crx_c_string_getSize(&(pFileHandle->gFullPath)) < PATH_MAX)
+			{
+				if((*vFunc_mkdir)(crx_c_string_getCString(&(pFileHandle->gFullPath)), 
+						((mode_t)pMode)) != 0)
+					{vErrorCode = errno;}
+			}
+			else
+				{vErrorCode = ENAMETOOLONG;}
+		}
+		else
+			{vErrorCode = ENOMEM;}
+		
+		crx_c_string_removeChars(&(pFileHandle->gFullPath), tLength, 
+				crx_c_string_getSize(&(pFileHandle->gFullPath)) - tLength);
+		
+		vIsDone = true;
+	}
+
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
 }
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_rawMkdir(
+		char const * pCString, uint32_t pMode /*mode_t*/)
+{
+	static bool vIsSet = false;
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Mkdir vFunc_mkdir /*= ?*/;
+	int32_t vErrorCode = 0;
+	bool vIsDone = false;
+	
+	if(!vIsSet)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_mkdir = crx_c_os_dll_loadSystemFunction("mkdir", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_mkdir = crx_c_os_dll_loadSystemFunction("mkdir", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_mkdir = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Mkdir)&mkdir);
+	#endif
+	
+		vIsSet = true;
+	}
+
+	if(strlen(pCString) < PATH_MAX)
+	{
+		if((*vFunc_mkdir)(pCString, ((mode_t)pMode)) != 0)
+			{vErrorCode = errno;}
+	}
+	else
+		{vErrorCode = ENAMETOOLONG;}
+	
+
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
+}
+
 
 //UNLIKE POSIX'S close() THIS EFFECTIVELY MODIFY THE FILE DESCRIPTOR TO -1, AND WILL CALL
 //		POSIX'S close() ONLY IF THE FILE DESCRIPTOR IS NOT -1
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_close(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle)
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle)
 	{return crx_c_os_fileSystem_private_posix_doClose(pFileHandle, false);}
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_doClose(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle, 
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle, 
 		bool pIsToCloseDescriptorOnly)
+{
+	bool vReturn = crx_c_os_fileSystem_private_posix_rawClose(pFileHandle->gFileDescriptor);
+
+	pFileHandle->gFileDescriptor = -1;
+
+	if(vReturn && !pIsToCloseDescriptorOnly)
+		{crx_c_string_empty(&(pFileHandle->gFullPath));}
+
+	return vReturn;
+}
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_rawClose(
+		int32_t pFileDescriptor)
 {
 	static Crx_NonCrxed_Os_Posix_Dll_Libc_Close vFunc_close = NULL;
 	
 	if(vFunc_close == NULL)
 	{
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
-		vFunc_close = crx_c_os_dll_loadSystemFunction("close", 2, 0, 0, 0, 0);
+		vFunc_close = crx_c_os_dll_loadSystemFunction("close", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_close = crx_c_os_dll_loadSystemFunction("close", 1, 0, 0, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
 		vFunc_close = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Open)&close);
 	#endif
 	}
-
+	
 	if(pFileHandle->gFileDescriptor != -1)
-	{
-		(*vFunc_close)(pFileHandle->gFileDescriptor);
-		pFileHandle->gFileDescriptor = -1;
-	}
-
-	if(!pIsToCloseDescriptorOnly)
-		{crx_c_string_empty(&(pFileHandle->gFullPath));}
+		{return ((*vFunc_close)(pFileHandle->gFileDescriptor) == 0);}
+	else
+		{return true;}
 }
 
 //THIS DOES NOT CLOSE THE FILE DESCRIPTOR, ONLY CLEARS, AND IS EQUIVILANT TO SETTING A FILE 
 //		DESCRIPTOR TO -1.
 CRX__LIB__PRIVATE_C_FUNCTION() void crx_c_os_fileSystem_private_posix_clear(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle const * CRX_NOT_NULL pFileHandle)
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle const * CRX_NOT_NULL pFileHandle)
 {
 	pFileHandle->gFileDescriptor = -1;
 	crx_c_string_empty(&(pFileHandle->gFullPath));
@@ -10633,7 +15311,7 @@ macos: #define AT_SYMLINK_NOFOLLOW     0x0020
 	WARNING: THIS FUNCTION TEMPORARILY MODIFIES pFileHandle; IT IS NOT THREAD SAFE.
 */
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_fstatat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
 		char const * pPartialPath, Crx_NonCrxed_Os_Posix_Dll_Libc_Stat * pStat,
 		bool pIsNotToFollowSymlinks)
 {
@@ -10735,10 +15413,17 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_fstatat(
 		vIsDone = true;
 	}
 
-	return (vErrorCode == 0);
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
 }
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_fstat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
 		Crx_NonCrxed_Os_Posix_Dll_Libc_Stat * pStat)
 {
 	if(pFileHandle->gFileDescriptor != -1)
@@ -10763,7 +15448,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_private_posix_callFst
 	{
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
 		//LINUX EXPOSED A DIFFERENT SYMBOL IN THE PAST, __fxstat, AND VERSIONED IT.
-		if(crx_c_os_dll_loadSystemFunction("__fxstat", 2, 0, 0, 0, 0) != NULL)
+		if(crx_c_os_dll_loadSystemFunction("__fxstat", 2, 2, 5, 0, 0) != NULL)
 			{vFunc_fstat = &crx_c_os_fileSystem_private_posix_linux_fstat;}
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_fstat = crx_c_os_dll_loadSystemFunction("fstat", 1, 0, 0, 0, 0);
@@ -10774,11 +15459,61 @@ CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_private_posix_callFst
 
 	return (*vFunc_fstat)(pFileDescriptor, pStat);
 }
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_rawStat(
+		char const * pCString, Crx_NonCrxed_Os_Posix_Dll_Libc_Stat * pStat,
+		bool pIsNotToFollowSymlinks)
+{
+	static bool vIsSet = false;
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_StatFunc vFunc_stat /*= ?*/;
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Lstat vFunc_lstat /*= ?*/;
+	int32_t vErrorCode = 0;
+	
+	if(!vIsSet)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_stat = &crx_c_os_fileSystem_private_posix_linux_stat;
+		vFunc_lstat = &crx_c_os_fileSystem_private_posix_linux_lstat;
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_stat = crx_c_os_dll_loadSystemFunction("stat", 1, 0, 0, 0, 0);
+		vFunc_lstat = crx_c_os_dll_loadSystemFunction("lstat", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_stat = ((Crx_NonCrxed_Os_Posix_Dll_Libc_StatFunc)&stat);
+		vFunc_lstat = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Lstat)&lstat);
+	#endif
+	
+		vIsSet = true;
+	}
+
+	if(strlen(pCString) < PATH_MAX)
+	{
+		int32_t tResult = 0;
+
+		if(pIsNotToFollowSymlinks)
+			{tResult = (*vFunc_lstat)(pCString, pStat);}
+		else
+			{tResult = (*vFunc_stat)(pCString, pStat);}
+
+		if(tResult != 0)
+			{vErrorCode = errno;}
+	}
+	else
+		{vErrorCode = ENAMETOOLONG;}
+
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
+}
+
 
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_renameat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
 		char const * pPartialPath, 
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle__new,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle__new,
 		char const * pPartialPath__new)
 {
 	static bool vIsSet = false;
@@ -10796,8 +15531,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_renameat(
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
 		//LINUX EXPOSED A DIFFERENT SYMBOL IN THE PAST, __fxstatat, AND VERSIONED IT.
 		vFunc_renameat = crx_c_os_dll_loadSystemFunction("renameat", 2, 4, 0, 0, 0);
-		vFunc_rename = crx_c_os_dll_loadSystemFunction("rename", 2, 0, 0, 0, 0);
-		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 0, 0, 0, 0);
+		vFunc_rename = crx_c_os_dll_loadSystemFunction("rename", 2, 2, 5, 0, 0);
+		vFunc_open = crx_c_os_dll_loadSystemFunction("open", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_renameat = crx_c_os_dll_loadSystemFunction("renameat", 1, 1, 0, 0, 0);
 		vFunc_rename = crx_c_os_dll_loadSystemFunction("rename", 1, 0, 0, 0, 0);
@@ -10819,13 +15554,15 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_renameat(
 			{
 				pFileHandle->gFileDescriptor = (*vFunc_open)(crx_c_string_getCString(
 						&(pFileHandle->gFullPath)), 
-						O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/);
+						crx_c_os_fileSystem_internal_posix_amendOpenatFlags(
+						O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/));
 			}
 			if(pFileHandle__new->gFileDescriptor == -1)
 			{
 				pFileHandle__new->gFileDescriptor = (*vFunc_open)(crx_c_string_getCString(
 						&(pFileHandle__new->gFullPath)), 
-						O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/);
+						crx_c_os_fileSystem_internal_posix_amendOpenatFlags(
+						O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/));
 			}
 			
 			if((pFileHandle->gFileDescriptor != -1) && (pFileHandle__new->gFileDescriptor != -1))
@@ -10915,11 +15652,19 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_renameat(
 		crx_c_string_destruct(&tString2);
 	}
 
-	return (vErrorCode == 0);
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
 }
 
+//UNLIKE THE NATIVE FUNCTION, THIS WILL ATTEMPT TO AQUIRE AN EXCLUSIVE LOCK BEFORE DELETING
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_unlinkat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
 		char const * pPartialPath)
 {
 	static bool vIsSet = false;
@@ -10930,6 +15675,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_unlinkat(
 			(((strlen(pPartialPath) == 1) && ((*pPartialPath == '/') || (*pPartialPath == '\\'))));
 	bool vIsADirectory = vIsPartialPathEmpty || (*(pPartialPath + strlen(pPartialPath) - 1) == '/') ||
 			(*(pPartialPath + strlen(pPartialPath) - 1) == '\\');
+	Crx_C_Os_FileSystem_Internal_Posix_FileHandle vFileHandle /*= ?*/;
 	int32_t vErrorCode = 0;
 	
 	if(!vIsSet)
@@ -10950,8 +15696,18 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_unlinkat(
 	
 		vIsSet = true;
 	}
-
-	if(pFileHandle->gFileDescriptor != -1)
+	crx_c_os_fileSystem_internal_posix_fileHandle_construct(&vFileHandle);
+	
+	if(crx_c_os_fileSystem_internal_posix_openat(&vFileHandle, pFileHandle,
+			pPartialPath, O_RDONLY /*| O_DIRECTORY DOES NOT EXIST ON MACOS 10.7*/, 0))
+	{
+		if(!crx_c_os_fileSystem_private_posix_flock(&vFileHandle, LOCK_EX|LOCK_NB))
+			{vErrorCode = errno;}
+	}
+	else
+		{vErrorCode = errno;}
+	
+	if((vErrorCode == 0) && (pFileHandle->gFileDescriptor != -1))
 	{
 		if(vFunc_unlinkat != NULL)
 		{
@@ -10971,7 +15727,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_unlinkat(
 		}
 	}
 
-	if(!vIsDone)
+	if((vErrorCode == 0) && !vIsDone)
 	{
 		Crx_C_String tString /*= ?*/;
 		bool tIsNoError = true;
@@ -11017,7 +15773,18 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_unlinkat(
 		crx_c_string_destruct(&tString;
 	}
 
-	return (vErrorCode == 0);
+	crx_c_os_fileSystem_internal_posix_close(&vFileHandle);
+
+	crx_c_os_fileSystem_internal_posix_fileHandle_destruct(&vFileHandle);
+
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
 }
 
 /*
@@ -11026,7 +15793,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_unlinkat(
 */
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_fdopendir(
 		DIR * * CRX_NOT_NULL pReturn,
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle)
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle)
 {
 	static bool vIsSet = false;
 	static Crx_NonCrxed_Os_Posix_Dll_Libc_Fdopendir vFunc_fdopendir /*= ?*/;
@@ -11039,8 +15806,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_fdopendir
 	{
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
 		vFunc_fdopendir = crx_c_os_dll_loadSystemFunction("fdopendir", 2, 4, 0, 0, 0);
-		vFunc_opendir = crx_c_os_dll_loadSystemFunction("opendir", 2, 0, 0, 0, 0);
-		vFunc_dup = crx_c_os_dll_loadSystemFunction("dup", 2, 0, 0, 0, 0);
+		vFunc_opendir = crx_c_os_dll_loadSystemFunction("opendir", 2, 2, 5, 0, 0);
+		vFunc_dup = crx_c_os_dll_loadSystemFunction("dup", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_fdopendir = crx_c_os_dll_loadSystemFunction("fdopendir", 1, 1, 0, 0, 0);
 		vFunc_opendir = crx_c_os_dll_loadSystemFunction("opendir", 1, 0, 0, 0, 0);
@@ -11136,7 +15903,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() Crx_NonCrxed_Os_Posix_Dll_Libc_Dirent *
 	if(vFunc_readdir == NULL)
 	{
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
-		vFunc_readdir = crx_c_os_dll_loadSystemFunction("readdir", 2, 0, 0, 0, 0);
+		vFunc_readdir = crx_c_os_dll_loadSystemFunction("readdir", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_readdir = crx_c_os_dll_loadSystemFunction("readdir", 1, 0, 0, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
@@ -11155,7 +15922,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_internal_posix_closed
 	if(vFunc_closedir == NULL)
 	{
 	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
-		vFunc_closedir = crx_c_os_dll_loadSystemFunction("closedir", 2, 0, 0, 0, 0);
+		vFunc_closedir = crx_c_os_dll_loadSystemFunction("closedir", 2, 2, 5, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
 		vFunc_closedir = crx_c_os_dll_loadSystemFunction("closedir", 1, 0, 0, 0, 0);
 	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
@@ -11167,6 +15934,313 @@ CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_internal_posix_closed
 		{return (*vFunc_closedir)(pDir);}
 	else
 		{return 0;}
+}
+
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_doPwrite(
+		int32_t pFileDescriptor, void const * pBuffer, size_t pCount, uint64_t pOffset)
+{
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Pwrite vFunc_pwrite /*= ?*/;
+	unsigned char const * vBuffer = ((unsigned char const *)pBuffer);
+	uint64_t vOffset = pOffset;
+	int64_t vLength = pCount;
+	bool vReturn = true;
+
+	if(vFunc_pwrite == NULL)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_pwrite = crx_c_os_dll_loadSystemFunction("pwrite", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_pwrite = crx_c_os_dll_loadSystemFunction("pwrite", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_pwrite = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Pwrite)&pwrite);
+	#endif
+	}
+
+	while(vLength > 0)
+	{
+		int64_t tLength = (*vFunc_pwrite)(pFileDescriptor, vBuffer, vLength, ((int64_t)vOffset));
+
+		if(tLength >= 0)
+		{
+			vLength = vLength - tLength;
+			vBuffer = vBuffer + tLength;
+			vOffset = vOffset + tLength;
+		}
+		else
+		{
+			vReturn = false;
+
+			break;
+		}
+	}
+
+	return vReturn;
+}
+CRX__LIB__PRIVATE_C_FUNCTION() int64_t crx_c_os_fileSystem_internal_posix_doPread(
+		int32_t pFileDescriptor, void const * pBuffer, size_t pCount, uint64_t pOffset)
+{
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Pread vFunc_pread /*= ?*/;
+	size_t vCount = pCount;
+	int64_t vOffset = ((int64_t)pOffset);
+	int64_t vReturn = 0;
+
+	if(vFunc_pread == NULL)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_pread = crx_c_os_dll_loadSystemFunction("pread", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_pread = crx_c_os_dll_loadSystemFunction("pread", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_pread = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Pread)&pread);
+	#endif
+	}
+
+	while(vCount > 1073741824 /*1GB*/)
+	{
+		int64_t tCount = (*vFunc_pread)(pFileDescriptor, pBuffer, 1073741824, vOffset);
+
+		if(tCount > 0)
+		{
+			/*IF vCount IS LESS THAN REQUESTED, THIS COULD POTENTIALLY BE AN ERROR, 
+					NOT AN END OF FILE. HOWEVER, IT IS UNCLEAR HOW TO DIFFERENTIATE BETWEEN THE
+					TWO CASES. */
+			vCount = vCount - tCount;
+			vOffset = vOffset + tCount;
+			vReturn = vReturn + tCount;
+		}
+		else if(tCount == 0)
+		{
+			/*THIS COULD POTENTIALLY BE AN ERROR, NOT AN END OF FILE. HOWEVER, I WAS UNABLE TO FIND
+					OUT WHAT EXACTLY IS REQUIRED TO DIFFERENTIATE THE TWO SIUTATIONS.*/
+			break;
+		}
+		else
+		{
+			vReturn = tCount;
+
+			break;
+		} //ERROR
+	}
+
+	if(vReturn >= 0)
+	{
+		while(vCount > 0)
+		{
+			int64_t tCount = (*vFunc_pread)(pFileDescriptor, pBuffer, vCount, vOffset);
+			
+			if(tCount > 0)
+			{
+				/*IF vCount IS LESS THAN REQUESTED, THIS COULD POTENTIALLY BE AN ERROR, 
+						NOT AN END OF FILE. HOWEVER, IT IS UNCLEAR HOW TO DIFFERENTIATE BETWEEN THE
+						TWO CASES. */
+				vCount = vCount - tCount;
+				vOffset = vOffset + tCount;
+				vReturn = vReturn + tCount;
+			}
+			else if(tCount == 0)
+			{
+				/*THIS COULD POTENTIALLY BE AN ERROR, NOT AN END OF FILE. HOWEVER, I WAS UNABLE TO FIND
+						OUT WHAT EXACTLY IS REQUIRED TO DIFFERENTIATE THE TWO SIUTATIONS.*/
+				break;
+			}
+			else
+			{
+				vReturn = tCount;
+
+				break;
+			} //ERROR
+		}
+	}
+
+	return ((vReturn >= 0) ? vReturn : -1);
+}
+/*
+	uint32_t IS USED FOR pLength INSTEAD OF size_t TO MATCH THE LIMITATION ON WINDOWS.
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() void * crx_c_os_fileSystem_internal_posix_mmap(void * pAddress, 
+		uint32_t pLength, int32_t pProtFlags, int32_t pFlags, int32_t pFileDescriptor, 
+		int64_t pOffset)
+{
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Mmap vFunc_mmap /*= ?*/;
+
+	if(vFunc_mmap == NULL)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_mmap = crx_c_os_dll_loadSystemFunction("mmap", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_mmap = crx_c_os_dll_loadSystemFunction("mmap", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_mmap = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Mmap)&mmap);
+	#endif
+	}
+
+	if(pLength != 0)
+		{return (*vFunc_mmap)(pAddress, pLength, pProtFlags, pFlags, pFileDescriptor, pOffset);}
+	else
+	{
+		errno = EINVAL;
+
+		return false;
+	}
+}
+/*
+	uint32_t IS USED FOR pLength INSTEAD OF size_t TO MATCH THE LIMITATION ON WINDOWS.
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_internal_posix_munmap(void * pAddress, 
+		uint32_t pLength)
+{
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Munmap vFunc_munmap /*= ?*/;
+
+	if(vFunc_munmap == NULL)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_munmap = crx_c_os_dll_loadSystemFunction("munmap", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_munmap = crx_c_os_dll_loadSystemFunction("munmap", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_munmap = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Munmap)&munmap);
+	#endif
+	}
+
+	return (*vFunc_munmap)(pAddress, pLength);
+}
+/*
+	uint32_t IS USED FOR pLength INSTEAD OF size_t TO MATCH THE LIMITATION ON WINDOWS.
+	
+	IF ALL MAPPING IS DONE WITH THE FLAG MAP_SHARED WHEN USING mmap(), THEN 
+			pIsToInvalidateTheCacheItselfInstead SHOULD PROBABLY BE ALWAYS false, UNLESS THE
+			CALLER IS SOMEONE WHO WROTE TO THE FILE USING OTHER MEANS, MEANING SOMETHING LIKE
+			THE POSIX write(). THIS WOULD CAUSE THE PROCESSES THAT HAVE THE FILE MAPPED TO DISCARD
+			WHAT THEY HAVE AND RELOAD FROM THE DISK (WHEN A DISK IS USED, WHICH IS ALWAYS
+			ASSUMED UNDER THIS NAME SAPCE).
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_internal_posix_msync(void * pAddress, 
+		uint32_t pLength, bool pIsImmediate, bool pIsToInvalidateTheCacheItselfInstead)
+{
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Msync vFunc_msync /*= ?*/;
+	int32_t vFlags = (pIsImmediate ? MS_SYNC : MS_ASYNC);
+
+	if(vFunc_msync == NULL)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_msync = crx_c_os_dll_loadSystemFunction("msync", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_msync = crx_c_os_dll_loadSystemFunction("msync", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_msync = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Msync)&msync);
+	#endif
+	}
+	
+	if(pIsToInvalidateTheCacheItselfInstead)
+		{vFlags = vFlags | MS_INVALIDATE;}
+
+	return (*vFunc_msync)(pAddress, pLength, pFlags);
+}
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_posix_resizeFile(
+		int32_t pFileDescriptor, bool pIsToFill, uint64_t pLength)
+{
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Ftruncate vFunc_ftruncate /*= ?*/;
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_PosixFallocate vFunc_posixFallocate /*= ?*/;
+	int32_t vErrorCode = 0;
+	bool vIsNotDone = true;
+
+	if(vFunc_ftruncate == NULL)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_ftruncate = crx_c_os_dll_loadSystemFunction("ftruncate", 2, 2, 5, 0, 0);
+		vFunc_posixFallocate = crx_c_os_dll_loadSystemFunction("posix_fallocate", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_ftruncate = crx_c_os_dll_loadSystemFunction("ftruncate", 1, 0, 0, 0, 0);
+		vFunc_posixFallocate = crx_c_os_dll_loadSystemFunction("posix_fallocate", 1, 2, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_ftruncate = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Ftruncate)&ftruncate);
+		vFunc_posixFallocate = NULL;
+	#endif
+	}
+
+	if(pIsToFill || (vFunc_posixFallocate == NULL))
+	{
+		Crx_NonCrxed_Os_Posix_Dll_Libc_Stat tStat;
+		
+		if((crx_c_os_fileSystem_private_posix_callFstat(pFileDescriptor, &vStat) == 0) &&
+				(vStat.st_size >= 0))
+		{
+			if(pLength > vStat.st_size)
+			{
+				if(vFunc_posixFallocate != NULL)
+				{
+					if((*vFunc_posixFallocate)(pFileDescriptor, ((uint64_t)vStat.st_size) - 1,
+							((uint64_t)vStat.st_size) - pLength) == 0)
+						{vIsNotDone = false;}
+				}
+				
+				if(vIsNotDone)
+				{
+					if((*vFunc_ftruncate)(pFileDescriptor, pLength) == 0)
+					{
+						unsigned char vBuffer[16384];
+						uint64_t tOffset = ((uint64_t)vStat.st_size) - 1;
+						int64_t tLength = pLength - ((uint64_t)vStat.st_size);
+
+						memset(&(vBuffer[0]), 0, 16384);
+
+						/*
+							pwritev() MIGHT BE BENEFICIAL FOR FREEBSD 8.X HERE BUT NOT MACOS WHERE
+									IT DOES NOT EXIST WHEN NEEDED.
+							THERE IS A FALLBACK FOR MACOS WHERE ONE WOULD USE fcntl() BUT IT USES
+									NON STANDARD OPTIONS, AND DOES NOT SEEM GUARANTEED ON ALL
+									FILESYSTEMS OTHER THAN THE NATIVE ONES.
+						*/
+						while(tLength >= 16384)
+						{
+							if(crx_c_os_fileSystem_internal_posix_doPwrite(
+									pFileDescriptor, &(vBuffer[0]), 16384, tOffset))
+							{
+								tLength = tLength - 16384;
+								tOffset = tOffset + 16384;
+							}
+							else
+							{
+								vErrorCode = errno;
+								vIsNotDone = false;
+							}
+						}
+
+						if(vErrorCode == 0)
+						{
+							if(tLength > 0)
+							{
+								if(!crx_c_os_fileSystem_internal_posix_doPwrite(
+										pFileDescriptor, &(vBuffer[0]), tLength, tOffset))
+								{
+									vErrorCode = errno;
+									
+									break;
+								}
+							}
+						}
+					}
+					else
+						{vErrorCode = errno;}
+
+					vIsNotDone = false;
+				}
+			}
+		}
+		else
+			{vErrorCode = errno;}
+	}
+
+	if(!vIsNotDone && ((*vFunc_ftruncate)(pFileDescriptor, pLength) != 0))
+	{
+		vErrorCode = errno;
+		vIsNotDone = false;
+	}
+
+	if(vErrorCode != 0)
+		{errno = vErrorCode;}
+
+	return (vErrorCode == 0);
 }
 
 /*
@@ -11183,7 +16257,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() int32_t crx_c_os_fileSystem_internal_posix_closed
 			2 SECONDS FOR MODIFICATION DATE, AND DOES NOT SUPPORT ACCESS DATE AT ALL.
 */
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_futimesat(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle, 
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle, 
 		char const * pPartialPath, Crx_C_Os_FileSystem_Time const * pTimes /*pTimes[2]*/,
 		uint32_t pAccessTimeStampUpdateMode, uint32_t pModifiedTimeStampUpdateMode)
 {
@@ -11218,7 +16292,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_futimesat(
 		vIsSet = true;
 	}
 	
-	//leave futimes to last. macos 10.8 - 10.12. we leave this to last because it requires explicit
+	//leave futimes to last. macos 10.7 - 10.12. we leave this to last because it requires explicit
 	//		opening.
 	
 	if(pFileHandle->gFileDescriptor != -1)
@@ -11423,10 +16497,17 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_futimesat(
 		vIsDone = true;
 	}
 
-	return (vErrorCode == 0);
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
 }
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_futimes(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
 		Crx_C_Os_FileSystem_Time const * pTimes /*pTimes[2]*/,
 		uint32_t pAccessTimeStampUpdateMode, uint32_t pModifiedTimeStampUpdateMode)
 {
@@ -11451,7 +16532,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_futimes(
 		vIsSet = true;
 	}
 	
-	//leave futimes to last. macos 10.8 - 10.12. we leave this to last because it requires explicit
+	//leave futimes to last. macos 10.7 - 10.12. we leave this to last because it requires explicit
 	//		opening.
 	
 	if(pFileHandle->gFileDescriptor != -1)
@@ -11627,12 +16708,31 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_futimes(
 	}
 	#endif
 	
-	return (vErrorCode == 0);
+	if(vErrorCode != 0)
+	{
+		errno = vErrorCode;
+
+		return false;
+	}
+	else
+		{return true;}
 }
 
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_flock(
-		Crx_C_Os_FileSystem_Private_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
+		Crx_C_Os_FileSystem_Internal_Posix_FileHandle * CRX_NOT_NULL pFileHandle,
 		int32_t pOp)
+{
+	if(pFileHandle->gFileDescriptor != -1)
+		{return crx_c_os_fileSystem_private_posix_doFlock(pFileHandle->gFileDescriptor, pOp);}
+	else
+	{
+		errno = EBADF;
+
+		return false;
+	}
+}
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_rawFlock(
+		int32_t pFileDescriptor, int32_t pOp)
 {
 	static Crx_NonCrxed_Os_Posix_Dll_Libc_Flock vFunc_flock /*= ?*/;
 	bool vReturn = true;
@@ -11648,19 +16748,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_flock(
 	#endif
 	}
 	
-	//leave futimes to last. macos 10.8 - 10.12. we leave this to last because it requires explicit
-	//		opening.
-	
-	if(pFileHandle->gFileDescriptor != -1)
-	{
-		if((*vFunc_flock)(pFileHandle->gFileDescriptor, pOp) == -1)
-			{vReturn = false;}
-	}
-	else
-	{
-		errno = EBADF;
-		vReturn = false;
-	}
+	if((*vFunc_flock)(pFileDescriptor, pOp) == -1)
+		{vReturn = false;}
 	
 	return vReturn;
 }
@@ -11797,6 +16886,61 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool
 	#else
 		assert(false);
 	#endif
+}
+
+/*
+	THIS ONLY SUPPORTS THE OPTIONS IN THE ENUM, ::crx::c::os::fileSystem::Sc
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_posix_sysconf(
+		int64_t * CRX_NOT_NULL pReturn, int32_t pNameId)
+{
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Sysconf vFunc_sysconf /*= ?*/;
+	static Crx_NonCrxed_Os_Posix_Dll_Libc_Getpagesize vFunc_getpagesize /*= ?*/;
+	int64_t vReturnOfSysconf = -1;
+	bool vReturn = true;
+
+	if(vFunc_sysconf == NULL)
+	{
+	#if(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__LINUX)
+		vFunc_sysconf = crx_c_os_dll_loadSystemFunction("sysconf", 2, 2, 5, 0, 0);
+		//NOT REALY NEEDED
+		vFunc_getpagesize = crx_c_os_dll_loadSystemFunction("getpagesize", 2, 2, 5, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__FREE_BSD)
+		vFunc_sysconf = crx_c_os_dll_loadSystemFunction("sysconf", 1, 0, 0, 0, 0);
+		//NOT REALY NEEDED
+		vFunc_getpagesize = crx_c_os_dll_loadSystemFunction("getpagesize", 1, 0, 0, 0, 0);
+	#elif(CRX__C__OS__INFO__OS == CRX__C__OS__INFO__OS__MACOS)
+		vFunc_sysconf = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Sysconf)&sysconf);
+		//NEEDED BECAUSE MACOS 10.7 MIGHT NOT HAVE SUPPORT FOR _SC_PAGESIZE.
+		vFunc_getpagesize = ((Crx_NonCrxed_Os_Posix_Dll_Libc_Getpagesize)&getpagesize);
+	#endif
+	}
+
+	errno = 0;
+
+	if(pNameId == CRX__C__OS__FILE_SYSTEM__SC__PAGE_SIZE)
+	{
+		vReturnOfSysconf = (*vFunc_sysconf)(CRX__C__OS__FILE_SYSTEM__SC__PAGE_SIZE);
+
+		if(errno == EINVAL)
+		{
+			if(vFunc_getpagesize != NULL)
+			{
+				/*
+					WE ASSUME THAT IF _SC_PAGESIZE IS NOT AVAILABLE, THE PAGE SIZE IS NOT SO LARGE
+							AS TO OVERLOW int32_t, MEANING THE RETURN TYPE OF getpagesize()
+				*/
+				vReturnOfSysconf = (*vFunc_getpagesize)();
+				errno = 0;
+			}
+		}
+	}
+	else
+		{errno = EINVAL;}
+
+	*pReturn = vReturnOfSysconf;
+
+	return (errno != 0);
 }
 
 
@@ -12048,27 +17192,43 @@ CRX__LIB__PUBLIC_C_FUNCTION()
 				"FILE_FLAG_BACKUP_SEMANTICS", "FILE_FLAG_OPEN_REPARSE_POINT"
 		pHTemplateFile: VALUE VALUES ARE ONLY
 				NULL
+				
+	UNLIKE THE NATIVE SYSTEM FUNCTION, THIS FUNCTION IF PASSED NULL FOR pLpSecurityAttributes,
+			WILL INTERNALLY PASS A SECURITY_ATTRIBUTES INSTANCE WITH THE MEMBER
+			SECURITY_ATTRIBUTES::lpSecurityDescriptor TO NULL AND THE MEMBER
+			SECURITY_ATTRIBUTES::bInheritHandle TO FALSE. THIS IS TO AVOID HANDLE INHERITANCE BY
+			CHILD PROCESSES.
 */
 CRX__LIB__PRIVATE_C_FUNCTION() HANDLE crx_c_os_fileSystem_private_win32_createFile(bool pIsNotUtf8,
-		Crx_C_String const * pString, DWORD pDwDesiredAccess, DWORD pDwShareMode,
-		LPSECURITY_ATTRIBUTES pLpSecurityAttributes, DWORD pDwCreationDisposition, 
+		Crx_C_String * CRX_NOT_NULL pString, DWORD pDwDesiredAccess, DWORD pDwShareMode,
+		SECURITY_ATTRIBUTES * pLpSecurityAttributes, DWORD pDwCreationDisposition, 
 		DWORD pDwFlagsAndAttributes, HANDLE pHTemplateFile)
 {
 	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_CreateFileW vFunc_createFileW = 
-			crx_c_os_dll_loadSystemFunction("CreateFileW", 5, 1, 0, 0, 2);
+			crx_c_os_dll_loadSystemFunction("CreateFileW", 3, 51, 0, 0, 2);
 	bool vIsADirectory = false;
 	int32_t vErrorCode = 0;
+	SECURITY_ATTRIBUTES vSecurityAttributes /*= ?*/;
 	HANDLE vReturn = INVALID_HANDLE_VALUE;
 
+	CRX__SET_TO_ZERO(SECURITY_ATTRIBUTES, vSecurityAttributes);
+	
 	crx_c_os_fileSystem_internal_win32_addressDirectoryTrailingSlash(pIsNotUtf8, pString, 
 			&vIsADirectory);
+
+	if(pLpSecurityAttributes == NULL)
+	{
+		vSecurityAttributes.lpSecurityDescriptor = NULL;
+		vSecurityAttributes.bInheritHandle = false;
+	}
 
 	if(vFunc_createFileW != NULL)
 	{
 		if(pIsNotUtf8)
 		{
 			vReturn = (*vFunc_createFileW)((wchar_t const *)crx_c_string_getCString(pString), 
-					pDwDesiredAccess, pDwShareMode, pLpSecurityAttributes, 
+					pDwDesiredAccess, pDwShareMode, ((pLpSecurityAttributes != NULL) ? 
+					pLpSecurityAttributes : &vSecurityAttributes),
 					pDwCreationDisposition, pDwFlagsAndAttributes, pHTemplateFile);
 		}
 		else
@@ -12080,7 +17240,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() HANDLE crx_c_os_fileSystem_private_win32_createFi
 			if(crx_c_os_osString_unsafeConvertToOsString(&tString, pString))
 			{
 				vReturn = (*vFunc_createFileW)(((wchar_t const *)crx_c_string_getCString(&tString)), 
-						pDwDesiredAccess, pDwShareMode, pLpSecurityAttributes, 
+						pDwDesiredAccess, pDwShareMode, ((pLpSecurityAttributes != NULL) ? 
+						pLpSecurityAttributes : &vSecurityAttributes),
 						pDwCreationDisposition, pDwFlagsAndAttributes, pHTemplateFile);
 			}
 			else
@@ -12094,7 +17255,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() HANDLE crx_c_os_fileSystem_private_win32_createFi
 		if(pIsNotUtf8)
 		{
 			vReturn = CreateFileA((char const *)crx_c_string_getCString(pString), 
-					pDwDesiredAccess, pDwShareMode, pLpSecurityAttributes, 
+					pDwDesiredAccess, pDwShareMode, ((pLpSecurityAttributes != NULL) ? 
+					pLpSecurityAttributes : &vSecurityAttributes),
 					pDwCreationDisposition, pDwFlagsAndAttributes, pHTemplateFile);
 		}
 		else
@@ -12106,7 +17268,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() HANDLE crx_c_os_fileSystem_private_win32_createFi
 			if(crx_c_os_osString_unsafeConvertToOsString(&tString, pString))
 			{
 				vReturn = CreateFileA(((char const *)crx_c_string_getCString(&tString)), 
-						pDwDesiredAccess, pDwShareMode, pLpSecurityAttributes, 
+						pDwDesiredAccess, pDwShareMode, ((pLpSecurityAttributes != NULL) ? 
+						pLpSecurityAttributes : &vSecurityAttributes),
 						pDwCreationDisposition, pDwFlagsAndAttributes, pHTemplateFile);
 			}
 			else
@@ -12121,7 +17284,6 @@ CRX__LIB__PRIVATE_C_FUNCTION() HANDLE crx_c_os_fileSystem_private_win32_createFi
 
 	return vReturn;
 }
-
 CRX__LIB__PRIVATE_C_FUNCTION() bool 
 		crx_c_os_fileSystem_private_win32_verifyFileSystemPathToOs2AndCreateFile(
 		HANDLE * CRX_NOT_NULL pFileHandle,
@@ -12131,7 +17293,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool
 		Crx_C_String const * CRX_NOT_NULL pVerified1Utf8PathPrefix, 
 		Crx_C_String * CRX_NOT_NULL pVerified1Utf8Route,
 		DWORD pDwDesiredAccess, DWORD pDwShareMode,
-		LPSECURITY_ATTRIBUTES pLpSecurityAttributes, DWORD pDwCreationDisposition, 
+		SECURITY_ATTRIBUTES * pLpSecurityAttributes, DWORD pDwCreationDisposition, 
 		DWORD pDwFlagsAndAttributes, HANDLE pHTemplateFile)
 {
 	int32_t vErrorCode = 0;
@@ -12211,7 +17373,273 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool
 
 	return vIsNoError;
 }
-		
+CRX__LIB__PRIVATE_C_FUNCTION() HANDLE crx_c_os_fileSystem_private_win32_rawCreateFile(
+		char * CRX_NOT_NULL pCString, DWORD pDwDesiredAccess, DWORD pDwShareMode,
+		SECURITY_ATTRIBUTES * pLpSecurityAttributes, DWORD pDwCreationDisposition, 
+		DWORD pDwFlagsAndAttributes, HANDLE pHTemplateFile)
+{
+	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_CreateFileW vFunc_createFileW = 
+			crx_c_os_dll_loadSystemFunction("CreateFileW", 3, 51, 0, 0, 2);
+	bool vIsADirectory = false;
+	int32_t vErrorCode = 0;
+	SECURITY_ATTRIBUTES vSecurityAttributes /*= ?*/;
+	HANDLE vReturn = INVALID_HANDLE_VALUE;
+
+	CRX__SET_TO_ZERO(SECURITY_ATTRIBUTES, vSecurityAttributes);
+	
+	if(pLpSecurityAttributes == NULL)
+	{
+		vSecurityAttributes.lpSecurityDescriptor = NULL;
+		vSecurityAttributes.bInheritHandle = false;
+	}
+
+	if(vFunc_createFileW != NULL)
+	{
+		wchar_t tBuffer[1024];
+
+		if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer[0]), 1024, pCString, 
+				strlen(pCString), false))
+		{
+			vReturn = (*vFunc_createFileW)(&(tBuffer[0]), 
+					pDwDesiredAccess, pDwShareMode, ((pLpSecurityAttributes != NULL) ? 
+					pLpSecurityAttributes : &vSecurityAttributes),
+					pDwCreationDisposition, pDwFlagsAndAttributes, pHTemplateFile);
+		}
+		else
+			{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+	}
+	else
+	{
+		char tBuffer[1024];
+
+		if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer[0]), 1024, pCString, 
+				strlen(pCString), false))
+		{
+			vReturn = CreateFileA(&(tBuffer[0]), 
+					pDwDesiredAccess, pDwShareMode, ((pLpSecurityAttributes != NULL) ? 
+					pLpSecurityAttributes : &vSecurityAttributes),
+					pDwCreationDisposition, pDwFlagsAndAttributes, pHTemplateFile);
+		}
+		else
+			{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+	}
+
+	return vReturn;
+}
+
+
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_doCreateDirectory(
+		bool pIsNotUtf8, Crx_C_String * CRX_NOT_NULL pString, 
+		SECURITY_ATTRIBUTES * pLpSecurityAttributes, Crx_C_String * pTemplateDirectoryFullPath)
+{
+	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_CreateFileW vFunc_createDirectoryW = 
+			crx_c_os_dll_loadSystemFunction("CreateDirectoryW", 3, 51, 0, 0, 2);
+	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_CreateFileW vFunc_createDirectoryExW = 
+			crx_c_os_dll_loadSystemFunction("CreateDirectoryExW", 3, 51, 0, 0, 2);
+	bool vIsADirectory = false;
+	bool vIsADirectory2 = false;
+	int32_t vErrorCode = 0;
+	HANDLE vReturn = INVALID_HANDLE_VALUE;
+
+	crx_c_os_fileSystem_internal_win32_addressDirectoryTrailingSlash(pIsNotUtf8, 
+			pString, &vIsADirectory);
+	crx_c_os_fileSystem_internal_win32_addressDirectoryTrailingSlash(pIsNotUtf8, 
+			pTemplateDirectoryFullPath, &vIsADirectory2);
+
+	if(vFunc_createDirectoryW != NULL)
+	{
+		if(pIsNotUtf8)
+		{
+			if(pTemplateDirectoryFullPath == NULL)
+			{
+				vReturn = ((*vFunc_createDirectoryW)(
+						(wchar_t const *)crx_c_string_getCString(pString), 
+						pLpSecurityAttributes) != 0);
+			}
+			else
+			{
+				vReturn = ((*vFunc_createDirectoryExW)(
+						(wchar_t const *)crx_c_string_getCString(pTemplateDirectoryFullPath),
+						(wchar_t const *)crx_c_string_getCString(pString), 
+						pLpSecurityAttributes) != 0);
+			}
+		}
+		else
+		{
+			Crx_C_String tString /*= ?*/;
+
+			crx_c_string_construct(&tString);
+			
+			if(crx_c_os_osString_unsafeConvertToOsString(&tString, pString))
+			{
+				if(pTemplateDirectoryFullPath == NULL)
+				{
+					vReturn = ((*vFunc_createDirectoryW)(
+							(wchar_t const *)crx_c_string_getCString(&tString), 
+							pLpSecurityAttributes) != 0);
+				}
+				else
+				{
+					Crx_C_String tString2 /*= ?*/;
+
+					crx_c_string_construct(&tString2);
+
+					if(crx_c_os_osString_unsafeConvertToOsString(&tString2, 
+							pTemplateDirectoryFullPath))
+					{
+						vReturn = ((*vFunc_createDirectoryExW)(
+								(wchar_t const *)crx_c_string_getCString(&tString2),
+								(wchar_t const *)crx_c_string_getCString(&tString), 
+								pLpSecurityAttributes) != 0);
+					}
+					else
+						{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+
+					crx_c_string_destruct(&tString2);
+				}
+			}
+			else
+				{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+
+			crx_c_string_destruct(&tString);
+		}
+	}
+	else
+	{
+		if(pIsNotUtf8)
+		{
+			if(pTemplateDirectoryFullPath == NULL)
+			{
+				vReturn = CreateDirectoryA(
+						(char const *)crx_c_string_getCString(pString), 
+						pLpSecurityAttributes);
+			}
+			else
+			{
+				vReturn = CreateDirectoryExA(
+						(char const *)crx_c_string_getCString(pTemplateDirectoryFullPath), 
+						(char const *)crx_c_string_getCString(pString),
+						pLpSecurityAttributes);
+			}
+		}
+		else
+		{
+			Crx_C_String tString /*= ?*/;
+
+			crx_c_string_construct(&tString);
+			
+			if(crx_c_os_osString_unsafeConvertToOsString(&tString, pString))
+			{
+				if(pTemplateDirectoryFullPath == NULL)
+				{
+					vReturn = (CreateDirectoryA(
+							(char const *)crx_c_string_getCString(&tString), 
+							pLpSecurityAttributes) != 0);
+				}
+				else
+				{
+					Crx_C_String tString2 /*= ?*/;
+
+					crx_c_string_construct(&tString2);
+
+					if(crx_c_os_osString_unsafeConvertToOsString(&tString2, 
+							pTemplateDirectoryFullPath))
+					{
+						vReturn = (CreateDirectoryExA(
+								(char const *)crx_c_string_getCString(&tString2),
+								(char const *)crx_c_string_getCString(&tString), 
+								pLpSecurityAttributes) != 0);
+					}
+					else
+						{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+
+					crx_c_string_destruct(&tString2);
+				}
+			}
+			else
+				{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+
+			crx_c_string_destruct(&tString);
+		}
+	}
+
+	crx_c_os_fileSystem_internal_win32_undoAddressingDirectoryTrailingSlash(pIsNotUtf8,
+			pString, vIsADirectory);
+	crx_c_os_fileSystem_internal_win32_undoAddressingDirectoryTrailingSlash(pIsNotUtf8,
+			pTemplateDirectoryFullPath, vIsADirectory2);
+
+	return vReturn;
+}
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_rawDoCreateDirectory(
+		Crx_C_String * CRX_NOT_NULL pCString, 
+		SECURITY_ATTRIBUTES * pLpSecurityAttributes, Crx_C_String * pTemplateDirectoryFullPath)
+{
+	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_CreateFileW vFunc_createDirectoryW = 
+			crx_c_os_dll_loadSystemFunction("CreateDirectoryW", 3, 51, 0, 0, 2);
+	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_CreateFileW vFunc_createDirectoryExW = 
+			crx_c_os_dll_loadSystemFunction("CreateDirectoryExW", 3, 51, 0, 0, 2);
+	bool vIsADirectory = false;
+	bool vIsADirectory2 = false;
+	int32_t vErrorCode = 0;
+	HANDLE vReturn = INVALID_HANDLE_VALUE;
+
+	if(vFunc_createDirectoryW != NULL)
+	{
+		wchar_t tBuffer[1024];
+
+		if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer[0]), 1024, pCString, 
+				strlen(pCString), false))
+		{
+			if(pTemplateDirectoryFullPath == NULL)
+				{vReturn = ((*vFunc_createDirectoryW)(&(tBuffer[0]), pLpSecurityAttributes) != 0);}
+			else
+			{
+				wchar_t tBuffer2[1024];
+
+				if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer2[0]), 1024, 
+						pTemplateDirectoryFullPath, strlen(pTemplateDirectoryFullPath), false))
+				{
+					vReturn = ((*vFunc_createDirectoryExW)(&(tBuffer2[0]), &(tBuffer[0]), 
+							pLpSecurityAttributes) != 0);
+				}
+				else
+					{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+			}
+		}
+		else
+			{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+	}
+	else
+	{
+		char tBuffer[1024];
+
+		if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer[0]), 1024, pCString, 
+				strlen(pCString), false))
+		{
+			if(pTemplateDirectoryFullPath == NULL)
+				{vReturn = (CreateDirectoryA(&(tBuffer[0]), pLpSecurityAttributes) != 0);}
+			else
+			{
+				char tBuffer2[1024];
+
+				if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer2[0]), 1024, 
+						pTemplateDirectoryFullPath, strlen(pTemplateDirectoryFullPath), false))
+				{
+					vReturn = (CreateDirectoryExA(&(tBuffer2[0]), &(tBuffer[0]), 
+							pLpSecurityAttributes) != 0);
+				}
+				else
+					{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+			}
+		}
+		else
+			{SetLastError(ERROR_BAD_PATHNAME);}//THIS MIGHT NOT BE NECESSARILY CORRECT.
+	}
+
+	return vReturn;
+}
+
+
 //WARNING: pString CAN NOT HAVE A TRAILING SLASH, BE NULL, OR EMPTY 			(TODO)
 //REMEMBER: YOU CAN USE THIS INSTEAD OF GetFileAttributesExA() WHICH IS NOT FOUND IN WIN95
 /*
@@ -12592,7 +18020,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_win32_doMoveFil
 }
 
 /*
-	NOTE: ORIGINALLY, UNLIKE GetFileAttributes() ON MOUNTS POINTS, THIS FUNCTION WOULD THE 
+	NOTE: ORIGINALLY, UNLIKE GetFileAttributes() ON MOUNTS POINTS, THIS FUNCTION WOULD RETURN THE 
 			INFORMATION OF THE ROOT OF THE MOUNT, AND NOT THE MOUNT POINT ITSELF. DECIDED AGAINST
 			THAT LATER ON.
 */
@@ -12730,6 +18158,38 @@ CRX__LIB__PRIVATE_C_FUNCTION() DWORD crx_c_os_fileSystem_private_win32_getFileAt
 
 	return vReturn;
 }
+CRX__LIB__PRIVATE_C_FUNCTION() DWORD crx_c_os_fileSystem_private_win32_rawGetFileAttributes(
+		char const * pCString)
+{
+	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_GetFileAttributesW vFunc_getFileAttributesW = 
+			crx_c_os_dll_loadSystemFunction("GetFileAttributesW", 3, 51, 0, 0, 2);
+	DWORD vReturn = INVALID_FILE_ATTRIBUTES;
+
+	
+	if(vFunc_getFileAttributesW != NULL)
+	{
+		wchar_t tBuffer[1024];
+
+		if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer[0]), 1024, pCString, 
+				strlen(pCString), false))
+			{vReturn = (*vFunc_getFileAttributesW)(&(tBuffer[0]));}
+		else
+			{SetLastError(ERROR_BAD_PATHNAME);}		
+	}
+	else
+	{
+		char vBuffer[1024];
+
+		if(crx_c_os_osString_rawUnsafeConvertToOsString(&(tBuffer[0]), 1024, pCString, 
+				strlen(pCString), false))
+			{vReturn = GetFileAttributesA(&(tBuffer[0]));}
+		else
+			{SetLastError(ERROR_BAD_PATHNAME);}
+	}
+
+	return vReturn;
+}
+
 
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_getFileInformation(
 		bool pIsNotUtf8, Crx_C_String const * pString, bool pIsADirectory,
@@ -13057,7 +18517,7 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_doGetVolum
 }
 
 CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_deleteFile(
-		bool pIsNotUtf8, Crx_C_String const * pString)
+		bool pIsNotUtf8, Crx_C_String * pString)
 {
 	static Crx_NonCrxed_Os_Windows_Dll_Kernel32_DeleteFileW vFunc_deleteFileW = 
 			crx_c_os_dll_loadSystemFunction("DeleteFileW", 3, 51, 0, 0, 2);
@@ -13098,8 +18558,8 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_deleteFile
 
 		if(pIsNotUtf8)
 		{
-			tHandle = crx_c_os_fileSystem_private_win32_createFile(true,
-					crx_c_string_getCString(pString), FILE_SHARE_READ | FILE_SHARE_WRITE, 0, NULL, 
+			tHandle = crx_c_os_fileSystem_private_win32_createFile(true, pString, 
+					FILE_SHARE_READ | FILE_SHARE_WRITE, 0, NULL, 
 					OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 			if(tHandle != INVALID_HANDLE_VALUE)
@@ -13202,6 +18662,336 @@ CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_removeDire
 			pString, vIsADirectory);
 	
 	return (vResult != 0);
+}
+
+/*
+	IF THIS RETURNS true, THE ENTIRE BUFFER WAS WRITTEN.
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_doWriteFile(HANDLE pHandle,
+		void const * pBuffer, size_t pCount, uint64_t pOffset)
+{
+	OVERLAPPED vOverlapped /*= ?*/;
+	unsigned char const * vBuffer = ((unsigned char const *)pBuffer);
+	ULARGE_INTEGER vULargeInteger;
+	size_t vCount = pCount;
+	bool vIsNoError = true;
+	
+	CRX__SET_TO_ZERO(OVERLAPPED, vOverlapped);
+	vULargeInteger.QuadPart = pOffset;
+
+	vOverlapped.Offset = vULargeInteger.u.LowPart;
+	vOverlapped.OffsetHigh = vULargeInteger.u.HighPart;
+
+	while(vCount > UINT32_MAX)
+	{
+		uint32_t tCount = 0;
+
+		if(WriteFile(pHandle, pBuffer, UINT32_MAX, &tCount, &vOverlappeds) != 0)
+		{
+			vCount = vCount - tCount;
+			vBuffer = vBuffer + tCount;
+			vULargeInteger.QuadPart = vULargeInteger.QuadPart + tCount;
+			vOverlapped.Offset = vULargeInteger.u.LowPart;
+			vOverlapped.OffsetHigh = vULargeInteger.u.HighPart;
+		}
+		else
+			{vIsNoError = false;}
+	}
+
+	if(vIsNoError)
+	{
+		while(vCount > 0)
+		{
+			uint32_t tCount = 0;
+
+			if(WriteFile(pHandle, pBuffer, vCount, &tCount, &vOverlappeds) != 0)
+			{
+				vCount = vCount - tCount;
+				vULargeInteger.QuadPart += tCount;
+				vOverlapped.Offset = vULargeInteger.u.LowPart;
+				vOverlapped.OffsetHigh = vULargeInteger.u.HighPart;
+			}
+			else
+				{vIsNoError = false;}
+		}
+	}
+
+	return vIsNoError;
+}
+
+CRX__LIB__PRIVATE_C_FUNCTION() int64_t crx_c_os_fileSystem_private_win32_doReadFile(HANDLE pHandle,
+		void const * pBuffer, size_t pCount, uint64_t pOffset)
+{
+	OVERLAPPED vOverlapped /*= ?*/;
+	ULARGE_INTEGER vULargeInteger;
+	size_t vCount = pCount;
+	bool vIsNoError = true;
+	
+	CRX__SET_TO_ZERO(OVERLAPPED, vOverlapped);
+	vULargeInteger.QuadPart = pOffset;
+
+	vOverlapped.Offset = vULargeInteger.u.LowPart;
+	vOverlapped.OffsetHigh = vULargeInteger.u.HighPart;
+
+	while(vCount > UINT32_MAX)
+	{
+		uint32_t tCount = 0;
+
+		if(ReadFile(pHandle, pBuffer, UINT32_MAX, &tCount, &vOverlappeds) != 0)
+		{
+			vCount = vCount - tCount;
+			vULargeInteger.QuadPart += tCount;
+			vOverlapped.Offset = vULargeInteger.u.LowPart;
+			vOverlapped.OffsetHigh = vULargeInteger.u.HighPart;
+		}
+		else
+		{
+			if(GetLastError() != ERROR_HANDLE_EOF)
+				{vIsNoError = false;}
+		}
+	}
+
+	if(vIsNoError)
+	{
+		while(vCount > 0)
+		{
+			uint32_t tCount = 0;
+
+			if(ReadFile(pHandle, pBuffer, vCount, &tCount, &vOverlappeds) != 0)
+			{
+				vCount = vCount - tCount;
+				vULargeInteger.QuadPart += tCount;
+				vOverlapped.Offset = vULargeInteger.u.LowPart;
+				vOverlapped.OffsetHigh = vULargeInteger.u.HighPart;
+			}
+			else
+			{
+				if(GetLastError() != ERROR_HANDLE_EOF)
+					{vIsNoError = false;}
+			}
+		}
+	}
+
+	return (vIsNoError ? (pCount - vCount) : -1);
+}
+/*
+	WARNING: UNLIKE WHAT CURRENT MICROSOFT DOCUMENTATION STATES, IF YOU USE "PAGE_WRITECOPY" MAKE 
+			SURE YOU USED GENERIC_READ AND GENERIC_WRITE WHEN YOU OPENED THE FILE TO GET 
+			pFileHandle.
+			
+	VALID VALUES FOR ARE pProtect
+					PAGE_READONLY, 		PAGE_READWRITE, 	PAGE_WRITECOPY
+					SEC_COMMIT,			SEC_IMAGE,			SEC_NOCACHE
+					SEC_RESERVE
+
+	SEC_RESERVE WHILE VALID, MEANING IT EXISTS AND SHOULD BE RELIABLE ON WINDOWS 95 AND UP, IT
+			IS NOT VALID FOR FILESYSTEM WORK BECAUSE IT DOES NOT ALLOW AN EXPLICIT FILE HANDLE.
+	
+	IF USING 
+		- PAGE_READONLY: MAKE SURE FILE WAS OPENED WITH GENERIC_READ
+		- PAGE_READWRITE: MAKE SURE FILE WAS OPENED WITH GENERIC_READ AND GENERIC_WRITE
+		- PAGE_WRITECOPY: MAKE SURE FILE WAS OPENED WITH GENERIC_READ AND GENERIC_WRITE
+			
+	PAGE_WRITECOPY DOES NOT EXIST ON WINDOW CE. THIS WILL MAKE A PRIVATE COPY OF THE MAPPED PAGE
+			AND GIVE IT TO THE PROCESS WHEN PROCESS WRITES TO THE MAP. THIS EFFECTIVELY MAKES
+			THE ACCESS READONLY IN TERMS OF THE FILE SYSTEM, WHILE AT THE SAME TIME ALLOWING
+			THE PROCESS TO MODIFY THE MAP IN MEMORY. HOWEVER, ANY MODIFICATION BY THE PROCESS IS
+			NOT SEEN BY OTHER PROCESSES.
+
+	<DEPRECATED 
+		THIS FUNCTION WILL NOT OPEN A NEW MAPPING TO THE FILE IF A MAPPING TO IT IS ALREADY OPEN, 
+		NOR WILL IT RETURN THE ALREADY OPEN MAPPING.
+		
+		<REASON> I HAVE CONFIRMED THAT CloseHandle CAN STILL BE SAFELY CALLED ON THE HANDLE RETURNED
+		WHEN A MAPPING ALREADY EXISTS WITHOUT AFFECTING THE OTHER MAPPING HANDLES TO THE SAME FILE
+		</REASON>
+	>
+
+	pFileHandle WILL BE CLOSED IF THE FUNCTION IS SUCCESSFUL, AND ITS VALUE SET TO 
+			INVALID_HANDLE_VALUE UNLESS pIsToUnsafeKeepFileHandleOpen IS SET TO TRUE. IF THIS IS
+			DONE, CALLER MUST NOT USE pFileHandle FOR OTHER ACTIVITY UNTIL THE RETURNED MAPPING 
+			HANDLE IS CLOSED.
+
+	IF pSize IS 0, THE CURRENT FILE SIZE IS USED.
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() HANDLE crx_c_os_fileSystem_private_win32_doCreateFileMapping(
+		HANDLE * CRX_NOT_NULL pFileHandle, uint32_t pProtect, 
+		uint64_t pSize CRX_DEFAULT(0), bool pIsToUnsafeKeepFileHandleOpen)
+{
+	ULARGE_INTEGER vULargeInteger;
+	HANDLE vReturn = NULL;
+
+	vULargeInteger.QuadPart = pSize;
+	vReturn = CreateFileMappingA(pFileHandle, NULL, pProtect, vULargeInteger.u.HighPart,
+			vULargeInteger.u.LowPart, NULL);
+
+	/*if(vReturn != NULL)
+	{
+		//I INCORRECTLY THOUGHT THAT CloseHandle() SHOULD NOT BE USED IN THIS CASE
+		if(GetLastError() == ERROR_ALREADY_EXISTS)
+			{vReturn = NULL;}
+	}*/
+
+	//FILE HANDLE MUST NOT BE USED AFTER THIS ON WINDOWS 95, AND OTHER SOURCES SUGGESTED THAT IT
+	//	CAN SIMPLY BE CLOSED.
+	if((vReturn != NULL) && pIsToUnsafeKeepFileHandleOpen)
+	{
+		CloseHandle(*pFileHandle);
+		*pFileHandle = INVALID_HANDLE_VALUE;
+	}
+	
+	return vReturn;
+}
+/*
+	
+	WARNING. IF FOR pAccessMode YOU USE,
+		- FILE_MAP_WRITE, pFileMappingHandle PARAMETER MUST HAVE BEEN CREATED WITH 
+				PAGE_READWRITE
+		- FILE_MAP_READ, pFileMappingHandle PARAMETER MUST HAVE BEEN CREATED WITH 
+				PAGE_READWRITE OR PAGE_READONLY
+		- FILE_MAP_ALL_ACCESS, pFileMappingHandle PARAMETER MUST HAVE BEEN CREATED WITH 
+				PAGE_READWRITE
+		- FILE_MAP_COPY, pFileMappingHandle PARAMETER MUST HAVE BEEN CREATED WITH 
+				PAGE_WRITECOPY.
+	
+	IF 0 IS USED FOR pViewLength, THE ENTIRE FILE IS MAPPED, BUT I DO NOT KNOW WHAT WOULD HAPPEN
+			IF THE FILE IS LARGER THAN 4GB. HENCE, IT IS BEST NOT TO USE THIS VALUE.
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() void * crx_c_os_fileSystem_private_win32_mapViewOfFile(
+		HANDLE pFileMappingHandle, uint32_t pAccessMode, uint64_t pOffset, 
+		uint32_t pViewLength CRX_DEFAULT(0))
+{
+	ULARGE_INTEGER vULargeInteger;
+	HANDLE vReturn = NULL;
+
+	vULargeInteger.QuadPart = pOffset;
+	
+	return MapViewOfFile(pFileMappingHandle, pAccessMode, vULargeInteger.u.HighPart,
+			vULargeInteger.u.LowPart, pViewLength);
+}
+/*WARNING: THE POINTER MUST BE THE BASE ADDRESS AND NOT SIMPLY AN ADDRESS IN THE REGION.*/
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_unmapViewOfFile(
+		void const * pPointerToBaseAddress)
+	{return (UnmapViewOfFile(pPointerToBaseAddress) != 0);}
+/*WARNING: THE POINTER MUST BE THE BASE ADDRESS AND NOT SIMPLY AN ADDRESS IN THE REGION.*/
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_private_win32_doFlushViewOfFile(
+		void const * pPointerToBaseAddress /*, bool pIsImmediate*/)
+{
+	FlushViewOfFile(pPointerToBaseAddress, 0);
+	
+	if(pIsImmediate)
+	{
+		/*
+			NEED THE UNDERLYING FILE HANDLE IF WE WANT TO GUARANTEE FLUSHING TO DISK BEFORE 
+					RETURNING FROM THE ABOVE CALL. IF WE ALSO CALL THE FUNCTION BELOW, ON LINUX IT 
+					APPEARS THAT THIS IS EQUIVILANT TO USING MS_SYNC WHEN CALLING msync(). AND IF 
+					WE DO NOT CALL THE FUNCTION BELOW, IT IS EQUIVILANT TO USING MS_ASYNC WHEN 
+					CALLING msync().
+		*/
+		//FlushFileBuffers(pFileHandle);
+	}
+}
+/*
+	IN REALITY pLength MUST BE SMALLER THAN (UINT64_MAX / 2)
+*/
+CRX__LIB__PRIVATE_C_FUNCTION() bool crx_c_os_fileSystem_internal_win32_resizeFile(
+		HANDLE pFileHandle, bool pIsToFill, uint64_t pLength)
+{
+	ULARGE_INTEGER vULargeInteger;
+	bool vIsNotDone = true;
+	bool vReturn = true;
+
+	vULargeInteger.QuadPart = pOffset;
+
+	if(!pIsToFill)
+	{
+		/*
+		GetFileSize() does not return correct size on windows 9x for large files.
+		
+		ULARGE_INTEGER tULargeInteger;
+		
+		tULargeInteger.QuadPart = 0;
+		
+		tULargeInteger.u.LowPart = GetFileSize(pFileHandle, &(tULargeInteger.u.HighPart));
+
+		/*
+			IF INSTEAD OF &(tULargeInteger.u.HighPart) WE PASSED NULL, THE CHECK ON GetLastError()
+			IS NOT REQUIRED.
+		* /
+		vReturn = ((tULargeInteger.u.LowPart != 0xFFFFFFFF /*INVALID_FILE_SIZE* /) || 
+				(GetLastError() == NO_ERROR));*/
+
+		ULARGE_INTEGER tULargeInteger;
+		BY_HANDLE_FILE_INFORMATION tByHandleFileInformation /*= ?*/;
+	
+		if(crx_c_os_fileSystem_internal_win32_getFileInformationByHandle(pFileHandle, 
+				&tByHandleFileInformation) != 0)
+		{				
+			tULargeInteger.u.HighPart = tByHandleFileInformation.nFileSizeHigh;
+			tULargeInteger.u.LowPart = tByHandleFileInformation.nFileSizeLow;
+		}
+		else
+			{vReturn = false;}
+
+		if(vReturn)
+		{
+			if(pLength > tULargeInteger.QuadPart)
+			{
+				unsigned char vBuffer[16384];
+				uint64_t tOffset = tULargeInteger.QuadPart - 1;
+				int64_t tLength = pLength - tULargeInteger.QuadPart;
+
+				memset(&(vBuffer[0]), 0, 16384);
+
+				/*
+					SOME SOURCES SUGGESTED THAT THIS IS ONLY NECESSARY FOR WINDOWS 95, AND NOT FOR
+					WINDOWS NT DESPITE OFFICIAL DOCUMENTATION.
+				*/
+				while(tLength >= 16384)
+				{
+					if(crx_c_os_fileSystem_private_win32_doWriteFile(
+							pFileDescriptor, &(vBuffer[0]), 16384, 
+							tULargeInteger.QuadPart, tOffset))
+					{
+						tLength = tLength - 16384;
+						tOffset = tOffset + 16384;
+					}
+					else
+						{vReturn = false;}
+				}
+
+				if(vReturn)
+				{
+					if(tLength > 0)
+					{
+						if(!crx_c_os_fileSystem_private_win32_doWriteFile(
+								pFileDescriptor, &(vBuffer[0]), tLength, tOffset))
+							{vReturn = false;}
+					}
+				}
+
+				vIsNotDone = false;
+			}
+		}
+		else
+			{vIsNotDone = false;}
+	}
+
+	if(vIsNotDone)
+	{
+		/*
+			IF INSTEAD OF &(vULargeInteger.u.HighPart) WE PASSED NULL, THE CHECK ON GetLastError()
+			IS NOT REQUIRED.
+		*/
+		vReturn = (((SetFilePointer(pFileHandle, vULargeInteger.u.LowPart, 
+				&(vULargeInteger.u.HighPart), FILE_BEGIN) != 
+				0xFFFFFFFF /*INVALID_SET_FILE_POINTER*/) || (GetLastError() == NO_ERROR)) && 
+				(SetEndOfFile(pFileHandle) != 0));
+
+		vIsNotDone = false;
+	}
+
+	return vReturn;
 }
 
 CRX__LIB__PRIVATE_C_FUNCTION() size_t crx_c_os_fileSystem_private_win32_getByteLengthOfRoute(
@@ -13646,5 +19436,83 @@ CRX__LIB__PUBLIC_C_FUNCTION() uint32_t crx_c_os_fileSystem_time_getAsThreadingIn
 		}
 	}
 }
+
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_byFileKey_construct(
+		Crx_C_Os_FileSystem_ByFileKey * pThis)
+{
+	pThis->gPrivate_osFileHandle = CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE;
+	crx_c_string_construct(&(pThis->gPrivate_fileFullPath));
+}
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_byFileKey_copyConstruct(
+		Crx_C_Os_FileSystem_ByFileKey * pThis,
+		Crx_C_Os_FileSystem_ByFileKey const * CRX_NOT_NULL pByFileKey)
+	{exit();}
+
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_ByFileKey * crx_c_os_fileSystem_byFileKey_new()
+{
+	Crx_C_Os_FileSystem_ByFileKey * vReturn = 
+			((Crx_C_Os_FileSystem_ByFileKey *)malloc(sizeof(Crx_C_Os_FileSystem_ByFileKey)));
+
+	if(vReturn != NULL)
+		{crx_c_os_fileSystem_byFileKey_construct(vReturn);}
+
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_ByFileKey * crx_c_os_fileSystem_byFileKey_moveNew(
+		Crx_C_Os_FileSystem_ByFileKey * CRX_NOT_NULL pByFileKey)
+{
+	Crx_C_Os_FileSystem_ByFileKey * vReturn = 
+			((Crx_C_Os_FileSystem_ByFileKey *)malloc(sizeof(Crx_C_Os_FileSystem_ByFileKey)));
+
+	if(vReturn != NULL)
+		{memcpy(vReturn, pByFileKey, sizeof(Crx_C_Os_FileSystem_ByFileKey));}
+
+	return vReturn;
+}
+CRX__LIB__PUBLIC_C_FUNCTION() Crx_C_Os_FileSystem_ByFileKey * crx_c_os_fileSystem_byFileKey_copyNew(
+		Crx_C_Os_FileSystem_ByFileKey const * CRX_NOT_NULL pByFileKey)
+	{exit();}
+
+CRX__C__TYPE_BLUE_PRINT__DEFINE_GET_BLUE_PRINT(
+		Crx_C_Os_FileSystem_ByFileKey, crx_c_os_fileSystem_byFileKey_,
+		CRXM__TRUE, CRXM__TRUE,
+		CRXM__FALSE, CRXM__TRUE,
+		CRXM__FALSE, CRXM__FALSE)
+
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_byFileKey_free(
+		Crx_C_Os_FileSystem_ByFileKey * pThis)
+	{free(pThis);}
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_byFileKey_destruct(
+		Crx_C_Os_FileSystem_ByFileKey * pThis)
+	{crx_c_string_destruct(&(pThis->gPrivate_fileFullPath));}
+	
+CRX__LIB__PUBLIC_C_FUNCTION() void crx_c_os_fileSystem_byFileKey_internal_set(
+		Crx_C_Os_FileSystem_ByFileKey * pThis, 
+		Crx_C_Os_FileSystem_OsFileHandle pOsFileHandle;
+		Crx_C_String * CRX_NOT_NULL pInternalFileFullPath)
+{
+	pThis->gPrivate_osFileHandle = pOsFileHandle;
+
+	if(crx_c_string_tryToPilferSwapContentWith(&(pThis->gPrivate_fileFullPath), 
+			pInternalFileFullPath))
+		{crx_c_string_empty(pInternalFileFullPath);}
+	else
+	{
+		crx_c_string_destruct(&(pThis->gPrivate_fileFullPath));
+		memcpy(&(pThis->gPrivate_fileFullPath), pInternalFileFullPath, sizeof(Crx_C_String));
+		crx_c_string_construct(pInternalFileFullPath);
+	}
+}
+
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_byFileKey_isSet(
+		Crx_C_Os_FileSystem_ByFileKey * pThis)
+	{return (pThis->gPrivate_osFileHandle != CRX__C__OS__FILE_SYSTEM__OS_FILE_NULL_HANDLE);}
+CRX__LIB__PUBLIC_C_FUNCTION() bool crx_c_os_fileSystem_byFileKey_unlock(
+		Crx_C_Os_FileSystem_ByFileKey * pThis)
+{
+	
+}
+
 
 CRX__LIB__C_CODE_END()
